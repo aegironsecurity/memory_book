@@ -18,7 +18,7 @@ A web app where guests at Don Manuel's 60th birthday party (about 100 people, at
 
 ## Status (as built)
 
-Deployed 2026-10-24 around 12:30 PDT into account 139023233949 (owner confirmed this account, signed in as root through `aws login`, CLI profile `memorybook`). Backend stack `memory-book-don-manuel` in us-west-2. Amplify app `memory_book` (id d2938vpg535zho) is in us-east-1 because it was created there; it serves globally, so it was kept. Site `https://main.d2938vpg535zho.amplifyapp.com`, repo `github.com/aegironsecurity/memory_book` (Amplify linked, builds on push to main). The scripts run from Windows Git Bash too (CRLF stripped from aws.exe output, `node` fallback when `jq` is missing).
+Deployed 2026-10-24 around 12:30 PDT into account 139023233949 (owner confirmed this account, signed in as root through `aws login`, CLI profile `memorybook`). Backend stack `memory-book-don-manuel` in us-west-2. Amplify app `memory_book` (id d2938vpg535zho) is in us-east-1 because it was created there; it serves globally, so it was kept. Site `https://main.d2938vpg535zho.amplifyapp.com`, repo `github.com/aegironsecurity/memory_book` (Amplify linked, builds on push to main). The scripts run from Windows Git Bash too (CRLF stripped from aws.exe output, `node` fallback when `jq` is missing). `scripts/smoke.sh` passed every check against the live stack on 2026-10-24, which covers items 1 to 4 below for curl. Phones (items 5 and 6) are still untested.
 
 - `backend/` Lambda handlers (guest and host), esbuild bundles committed in `backend/dist`.
 - `frontend/` guest page, host page, service worker. No build step.
