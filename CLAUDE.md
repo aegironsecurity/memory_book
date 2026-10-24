@@ -86,6 +86,9 @@ Status key: DECIDED (owner chose), DEFAULT (Claude recommendation, owner has not
 | D40 | Service worker serves repeat visits from its saved copy if the network has not answered within 2.5 s, and stops waiting for 30 s after a slow answer. First visits wait for the network | DECIDED | Found by tests: waiting per module layer made a hanging connection take 10 s to open the page, now 2.6 s |
 | D41 | Host table cards are printed from the host page (QR drawn in the browser from the vendored `qrcode-generator`, 6 cards per sheet, bilingual). The host types the code to print because only its hash is stored | DECIDED | The QR was verified by decoding a screenshot with OpenCV |
 | D42 | Production headers live in `customHttp.yml`: CSP with `default-src 'none'`, `script-src 'self'`, `style-src 'self'` (no inline anything), HSTS, nosniff, no-referrer, camera and microphone for self only | DECIDED | No inline script, style attribute or handler may be added. Tests enforce it |
+| D43 | Guests can sign up for the finished book: `POST /guest/optin` {name, email} (or {optIn:false} to remove), item `OPTIN#<guestId>` (name, email, consent, updatedAt), one per guest. Host list returns `optIns`, host page shows them with a CSV export (formula cells defused) | DECIDED | Owner asked 2026-10-24. Deployed at the owner's request before `npm run e2e` could run on Windows (sign-up steps are written into it) |
+| D44 | Palette is brown, cream and olive/sage (light and dark), on the guest page, host page, table cards and icon. All text pairs at least 4.5:1 | DECIDED | Owner asked 2026-10-24 |
+| D45 | `scripts/qr-stl.mjs <guest link>` writes a 3D printable QR sign to `print/` (gitignored, it holds the secret link): white 140 x 160 x 3 mm plate, 1 mm black modules (ECC Q), black stand with a 12 degree slot | DECIDED | Verified by decoding the STL geometry back to the link |
 
 ## Open items for the owner
 
