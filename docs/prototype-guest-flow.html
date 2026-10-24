@@ -1,0 +1,634 @@
+<title>Dad's 60th Memory Book</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one narrow phone column. A sticky prototype bar on top (view and simulated signal), guest screens in the middle, an upload tray pinned to the bottom. */
+:root{
+  --bg:#F2F5F8; --surface:#FFFFFF; --ink:#13202C; --muted:#566676; --line:#D5DDE5;
+  --accent:#CC4A12; --accent-ink:#FFFFFF; --soft:#FDE8DC;
+  --ok:#0E8F6A; --ok-ink:#FFFFFF; --warn:#9A6200; --bad:#B42318;
+  --page:#FFFFFF; --page-ink:#13202C;
+  --display:'Bricolage Grotesque','Avenir Next',system-ui,sans-serif;
+  --body:'DM Sans',system-ui,-apple-system,sans-serif;
+  --mono:'DM Mono',ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E1620; --surface:#16212D; --ink:#EAF0F5; --muted:#93A3B3; --line:#2A3948;
+    --accent:#FF8147; --accent-ink:#1A0D05; --soft:#3A2415;
+    --ok:#3CCB9C; --ok-ink:#06251C; --warn:#E6B450; --bad:#FF8A80;
+    --page:#1D2A38; --page-ink:#EAF0F5; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E1620; --surface:#16212D; --ink:#EAF0F5; --muted:#93A3B3; --line:#2A3948;
+  --accent:#FF8147; --accent-ink:#1A0D05; --soft:#3A2415;
+  --ok:#3CCB9C; --ok-ink:#06251C; --warn:#E6B450; --bad:#FF8A80;
+  --page:#1D2A38; --page-ink:#EAF0F5; color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font:16px/1.45 var(--body);
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:0;
+}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--bg)}
+h1,h2,h3,p,ul{margin:0}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+svg{display:block}
+.wrap{max-width:480px;margin:0 auto;padding-bottom:150px}
+
+/* prototype bar */
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);border-bottom:1px solid var(--line);padding-block:10px;display:flex;gap:12px;justify-content:space-between;align-items:flex-end;flex-wrap:wrap}
+.cap{display:block;font:500 10px/1 var(--mono);letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:5px}
+.seg{display:inline-flex;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:3px;gap:2px}
+.seg button{border:0;background:transparent;padding:6px 11px;border-radius:7px;font-weight:600;font-size:14px;color:var(--muted);min-height:36px}
+.seg button[aria-selected="true"],.seg button[aria-checked="true"]{background:var(--ink);color:var(--bg)}
+
+/* screens */
+.screen{display:flex;flex-direction:column;gap:18px;padding-block:22px 0}
+.eyebrow{font:500 12px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--accent)}
+.hero{display:flex;flex-direction:column;gap:10px;padding-top:4px}
+.sixty{font:800 clamp(110px,36vw,168px)/.8 var(--display);letter-spacing:-.05em;color:var(--accent);margin-left:-.04em}
+h1{font:800 clamp(34px,10vw,46px)/1 var(--display);letter-spacing:-.02em;text-wrap:balance}
+h2{font:700 28px/1.1 var(--display);letter-spacing:-.01em;text-wrap:balance}
+h3{font:700 18px/1.2 var(--display)}
+.lead{color:var(--muted);max-width:36ch}
+.field label,.lbl{display:block;font-weight:600;font-size:14px;margin-bottom:6px}
+input[type=text],textarea{width:100%;background:var(--surface);border:1.5px solid var(--line);border-radius:12px;padding:13px 14px;min-height:50px}
+textarea{min-height:160px;resize:vertical;line-height:1.45}
+.err{color:var(--bad);font-size:14px;font-weight:500;margin-top:6px}
+.meta{font:400 13px/1.45 var(--mono);color:var(--muted)}
+.foot{color:var(--muted);font-size:14px}
+
+.choices{display:flex;flex-direction:column;gap:10px}
+.choice{display:grid;grid-template-columns:48px 1fr 24px;align-items:center;gap:14px;width:100%;text-align:left;background:var(--surface);border:1.5px solid var(--line);border-radius:16px;padding:14px 16px;min-height:78px}
+.choice:active{transform:scale(.99)}
+.choice b{display:block;font:700 19px/1.2 var(--display)}
+.choice .sub{color:var(--muted);font-size:14px}
+.ic{width:48px;height:48px;border-radius:12px;background:var(--soft);color:var(--accent);display:grid;place-items:center}
+.chev{color:var(--muted)}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:54px;padding:0 20px;border-radius:14px;border:0;font-weight:700;font-size:17px;background:var(--accent);color:var(--accent-ink);width:100%}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
+.btns{display:flex;flex-direction:column;gap:10px}
+.back{align-self:flex-start;display:inline-flex;gap:4px;align-items:center;background:none;border:0;padding:6px 10px 6px 0;color:var(--muted);font-weight:600;min-height:40px}
+.link{background:none;border:0;padding:8px 0;color:var(--accent);font-weight:600;text-decoration:underline;text-underline-offset:3px;align-self:flex-start;min-height:40px}
+
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1.5px solid var(--line);background:var(--surface);border-radius:99px;padding:8px 14px;font-size:14px;font-weight:600;min-height:40px}
+.count{display:flex;justify-content:space-between;color:var(--muted);font:400 12px/1 var(--mono);margin-top:6px}
+
+.drop{position:relative;display:block;border:2px dashed var(--line);border-radius:16px;background:var(--surface);overflow:hidden;cursor:pointer}
+.drop:focus-within{outline:3px solid var(--accent);outline-offset:2px}
+.drop input{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}
+.drop.has{border-style:solid}
+.dz{display:grid;place-items:center;gap:8px;text-align:center;min-height:200px;padding:20px}
+.dz b{font:700 19px/1.2 var(--display)}
+.dz span{color:var(--muted);font-size:14px}
+.preview{width:100%;display:block;max-height:300px;object-fit:cover;background:var(--soft)}
+.swap{display:block;text-align:center;padding:12px;color:var(--accent);font-weight:600;font-size:14px}
+.dur{position:absolute;right:10px;top:10px;background:rgba(10,20,30,.78);color:#fff;font:500 12px/1 var(--mono);padding:5px 8px;border-radius:6px}
+
+.seal{width:84px;height:84px;border-radius:50%;background:var(--ok);color:var(--ok-ink);display:grid;place-items:center}
+.done-head{display:flex;flex-direction:column;gap:12px;align-items:flex-start}
+@media (prefers-reduced-motion:no-preference){.seal{animation:pop .45s cubic-bezier(.2,1.4,.4,1)}}
+@keyframes pop{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
+.hint{background:var(--soft);border-radius:14px;padding:14px 16px;font-size:14px}
+.qcard{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.q-top{display:flex;justify-content:space-between;gap:10px;font-weight:600;font-size:15px}
+.q-top span:last-child{font:500 12px/1.6 var(--mono);color:var(--muted);white-space:nowrap}
+.meter{height:8px;border-radius:99px;background:var(--line);overflow:hidden}
+.meter i{display:block;height:100%;background:var(--accent);border-radius:99px}
+.meter.ok i{background:var(--ok)}
+.q-detail{font:400 13px/1.4 var(--mono);color:var(--muted)}
+
+/* tray */
+.tray{position:fixed;left:0;right:0;bottom:0;z-index:25;pointer-events:none;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.tray-in{pointer-events:auto;max-width:480px;margin:0 auto;background:var(--surface);border:1px solid var(--line);border-bottom:0;border-radius:16px 16px 0 0;box-shadow:0 -8px 24px rgba(10,20,30,.12);padding-bottom:env(safe-area-inset-bottom,0px)}
+.tray-head{display:grid;grid-template-columns:1fr auto 20px;gap:12px;align-items:center;width:100%;background:none;border:0;padding:10px 16px;text-align:left;min-height:62px}
+.tray-sum{display:flex;flex-direction:column;gap:7px;min-width:0}
+.tray-sum b{font-size:15px}
+.pill{font:500 11px/1 var(--mono);padding:5px 8px;border-radius:99px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.pill[data-s="good"]{color:var(--ok);border-color:var(--ok)}
+.pill[data-s="weak"]{color:var(--warn);border-color:var(--warn)}
+.pill[data-s="off"]{color:var(--bad);border-color:var(--bad)}
+.tray-list{list-style:none;padding:0 16px 14px;display:flex;flex-direction:column;gap:14px;max-height:40vh;overflow:auto}
+.tray-list .qcard{border-radius:12px}
+.tray-head .chev{transition:transform .2s}
+.tray-head[aria-expanded="true"] .chev{transform:rotate(90deg)}
+
+/* host */
+.rows{list-style:none;padding:0;display:flex;flex-direction:column;gap:10px}
+.row{display:grid;grid-template-columns:56px minmax(0,1fr) auto;gap:12px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px}
+.row.off{opacity:.55}
+.th{width:56px;height:56px;border-radius:10px;background:var(--soft);display:grid;place-items:center;color:var(--accent);overflow:hidden}
+.th img{width:100%;height:100%;object-fit:cover}
+.who{font-weight:700;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.txt{color:var(--muted);font-size:14px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.tag{font:500 10px/1 var(--mono);letter-spacing:.06em;text-transform:uppercase;padding:4px 6px;border-radius:5px;background:var(--soft);color:var(--accent)}
+.tag.sending{background:transparent;border:1px solid var(--warn);color:var(--warn)}
+.mini{min-height:40px;padding:0 12px;border-radius:10px;border:1.5px solid var(--line);background:transparent;font-weight:600;font-size:14px}
+.book{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;padding:2px 2px 12px}
+.page{flex:0 0 220px;aspect-ratio:3/4;scroll-snap-align:start;border-radius:6px 14px 14px 6px;background:var(--page);color:var(--page-ink);border:1px solid var(--line);padding:16px;display:flex;flex-direction:column;gap:10px;overflow:hidden}
+.page.cover{background:var(--accent);color:var(--accent-ink);border-color:transparent;justify-content:space-between}
+.page.cover .sixty{color:var(--accent-ink);font-size:110px}
+.page.cover h3{font-size:22px}
+.quote{font:600 17px/1.3 var(--display);display:-webkit-box;-webkit-line-clamp:9;-webkit-box-orient:vertical;overflow:hidden}
+.pic{border-radius:8px;overflow:hidden;aspect-ratio:4/3;background:var(--soft);display:grid;place-items:center;color:var(--accent);position:relative}
+.pic img{width:100%;height:100%;object-fit:cover}
+.cap-p{font-size:13px;line-height:1.35}
+.by{margin-top:auto;font:500 11px/1.2 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.scan{display:flex;gap:10px;align-items:center;font-size:12px;line-height:1.3}
+.qr{width:46px;height:46px;flex:none}
+</style>
+
+<div class="wrap">
+  <div class="bar" role="region" aria-label="Prototype controls">
+    <div>
+      <span class="cap">Prototype view</span>
+      <div class="seg" role="tablist" aria-label="View">
+        <button role="tab" id="tab-guest" aria-selected="true">Guest</button>
+        <button role="tab" id="tab-host" aria-selected="false">Host</button>
+      </div>
+    </div>
+    <div>
+      <span class="cap">Simulate signal</span>
+      <div class="seg" role="radiogroup" aria-label="Simulated signal">
+        <button role="radio" data-sig="good" aria-checked="true">Good</button>
+        <button role="radio" data-sig="weak" aria-checked="false">Weak</button>
+        <button role="radio" data-sig="off" aria-checked="false">None</button>
+      </div>
+    </div>
+  </div>
+
+  <main id="guest">
+    <!-- HOME -->
+    <section class="screen" data-screen="home">
+      <div class="hero">
+        <span class="eyebrow">Memory book</span>
+        <div class="sixty" aria-hidden="true">60</div>
+        <h1>Dad's 60th</h1>
+        <p class="lead">Leave him a memory. A note, a photo, or a short video. It takes about 30 seconds, with no app and no account.</p>
+      </div>
+      <div class="field">
+        <label for="who">Your name</label>
+        <input type="text" id="who" autocomplete="name" placeholder="So Dad knows who it is from">
+        <p class="err" id="nameErr" hidden>Add your name first so Dad knows who it is from.</p>
+      </div>
+      <div class="choices">
+        <button class="choice" data-go="note"><span class="ic" data-icon="pen"></span><span><b>Write a note</b><span class="sub">A story, a wish, a thank you</span></span><span class="chev" data-icon="arrow"></span></button>
+        <button class="choice" data-go="photo"><span class="ic" data-icon="image"></span><span><b>Add a photo</b><span class="sub">From your camera roll or take one now</span></span><span class="chev" data-icon="arrow"></span></button>
+        <button class="choice" data-go="video"><span class="ic" data-icon="video"></span><span><b>Record a video</b><span class="sub">Up to 60 seconds</span></span><span class="chev" data-icon="arrow"></span></button>
+      </div>
+      <p class="foot" id="count"></p>
+      <p class="foot">Everything saves on your phone first, so a weak signal never loses it.</p>
+    </section>
+
+    <!-- NOTE -->
+    <section class="screen" data-screen="note" hidden>
+      <button class="back" data-go="home"><span data-icon="back"></span>Back</button>
+      <h2>Write a note</h2>
+      <div class="chips" id="chips">
+        <button class="chip" data-start="My favorite memory with Dad: ">A favorite memory</button>
+        <button class="chip" data-start="Something Dad taught me: ">What he taught me</button>
+        <button class="chip" data-start="My wish for his next chapter: ">A wish for what's next</button>
+      </div>
+      <div>
+        <label class="lbl" for="note">Your note</label>
+        <textarea id="note" maxlength="600" placeholder="Write as much or as little as you like."></textarea>
+        <div class="count"><span id="noteErr" class="err" hidden style="margin:0;font:inherit">Write a few words first.</span><span id="noteCount">0 / 600</span></div>
+      </div>
+      <button class="btn" id="saveNote">Save my note</button>
+    </section>
+
+    <!-- PHOTO -->
+    <section class="screen" data-screen="photo" hidden>
+      <button class="back" data-go="home"><span data-icon="back"></span>Back</button>
+      <h2>Add a photo</h2>
+      <label class="drop" id="photoDrop" for="photoIn">
+        <input type="file" id="photoIn" accept="image/*">
+        <div class="dz" id="photoBody"><span class="ic" data-icon="image"></span><b>Choose a photo</b><span>Opens your camera roll or camera</span></div>
+      </label>
+      <p class="err" id="photoErr" hidden></p>
+      <p class="meta" id="photoInfo" hidden></p>
+      <div class="field">
+        <label for="photoCap">Caption (optional)</label>
+        <input type="text" id="photoCap" maxlength="90" placeholder="Where and when was this?">
+      </div>
+      <button class="link" id="photoSample">No photo handy? Try a sample</button>
+      <button class="btn" id="savePhoto" disabled>Save my photo</button>
+    </section>
+
+    <!-- VIDEO -->
+    <section class="screen" data-screen="video" hidden>
+      <button class="back" data-go="home"><span data-icon="back"></span>Back</button>
+      <h2>Record a video</h2>
+      <label class="drop" id="videoDrop" for="videoIn">
+        <input type="file" id="videoIn" accept="video/*">
+        <div class="dz" id="videoBody"><span class="ic" data-icon="video"></span><b>Record or choose a video</b><span>Opens your camera or your library</span></div>
+      </label>
+      <p class="err" id="videoErr" hidden></p>
+      <p class="meta" id="videoInfo" hidden></p>
+      <button class="link" id="videoSample">No video handy? Try a sample</button>
+      <button class="btn" id="saveVideo" disabled>Save my video</button>
+    </section>
+
+    <!-- DONE -->
+    <section class="screen" data-screen="done" hidden>
+      <div class="done-head">
+        <div class="seal"><span data-icon="check"></span></div>
+        <h2 id="doneTitle">Saved on your phone</h2>
+        <p class="lead" id="doneSub"></p>
+      </div>
+      <div class="qcard" id="doneCard"></div>
+      <p class="hint">Keep this page open until the tray at the bottom says All sent. If you close it, sending picks up where it stopped the next time you open the link.</p>
+      <div class="btns">
+        <button class="btn" data-go="home">Add another memory</button>
+        <button class="btn ghost" data-go="thanks">I'm done</button>
+      </div>
+    </section>
+
+    <!-- THANKS -->
+    <section class="screen" data-screen="thanks" hidden>
+      <div class="hero">
+        <span class="eyebrow">Memory book</span>
+        <div class="sixty" aria-hidden="true">60</div>
+        <h1 id="thanksTitle">Thank you</h1>
+        <p class="lead" id="thanksSub"></p>
+        <p class="foot">The link stays open for a week after the party if you think of something else.</p>
+      </div>
+      <button class="btn ghost" data-go="home">Add another memory</button>
+    </section>
+  </main>
+
+  <main id="host" hidden>
+    <section class="screen">
+      <div>
+        <span class="eyebrow">Host view</span>
+        <h2 style="margin-top:10px">Everything that came in</h2>
+        <p class="lead" style="margin-top:8px">Hide anything you don't want in the book. Hidden memories stay out of the PDF and the video. Rows marked Example are placeholders.</p>
+      </div>
+      <p class="meta" id="hostCount"></p>
+      <ul class="rows" id="rows"></ul>
+      <div>
+        <h3>Book preview</h3>
+        <p class="foot" style="margin:4px 0 12px">One page per memory. Video pages carry a code that opens the clip.</p>
+        <div class="book" id="book" tabindex="0" aria-label="Book pages, scroll sideways"></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<aside class="tray" id="tray" hidden>
+  <div class="tray-in">
+    <button class="tray-head" id="trayBtn" aria-expanded="false" aria-controls="trayList">
+      <span class="tray-sum"><b id="traySum">Nothing to send</b><span class="meter" id="trayMeter"><i id="trayFill" style="width:0%"></i></span></span>
+      <span class="pill" id="trayPill" data-s="good">Good signal</span>
+      <span class="chev" data-icon="arrow"></span>
+    </button>
+    <ul class="tray-list" id="trayList" hidden></ul>
+  </div>
+</aside>
+
+<script>
+(function(){
+  var $=function(s,r){return (r||document).querySelector(s)};
+  var $$=function(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s))};
+  var esc=function(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})};
+
+  var P={
+    pen:'<path d="M4 20h4L18.5 9.5a2.1 2.1 0 0 0-3-3L5 17v3z"/><path d="M13.5 8.5l3 3"/>',
+    image:'<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M3 17l5-5 4 4 3-3 6 6"/>',
+    video:'<rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3"/>',
+    arrow:'<path d="M9 6l6 6-6 6"/>',
+    back:'<path d="M15 6l-6 6 6 6"/>',
+    check:'<path d="M5 12.5l4.5 4.5L19 7.5" stroke-width="2.6"/>'
+  };
+  function svg(n,sz){sz=sz||24;return '<svg width="'+sz+'" height="'+sz+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+P[n]+'</svg>'}
+  $$('[data-icon]').forEach(function(el){el.innerHTML=svg(el.getAttribute('data-icon'),el.classList.contains('seal')?44:24)});
+  $('.seal').innerHTML=svg('check',46);
+
+  var PAL=[['#F6B26B','#E4561A','#33415C'],['#8FD3C7','#2A9D8F','#14323B'],['#B8C4F0','#6C7AE0','#1E2455'],['#F2C6D0','#D9627D','#43203A']];
+  function art(n){
+    var p=PAL[n%4];
+    var s='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="'+p[0]+'"/><stop offset="1" stop-color="'+p[1]+'"/></linearGradient></defs><rect width="400" height="300" fill="url(#g)"/><circle cx="'+(90+n*45)+'" cy="90" r="38" fill="#fff" fill-opacity=".85"/><path d="M0 230 Q110 150 220 215 T400 190 V300 H0Z" fill="'+p[2]+'" fill-opacity=".85"/><path d="M0 265 Q130 205 260 255 T400 240 V300 H0Z" fill="'+p[2]+'"/></svg>';
+    return 'data:image/svg+xml;utf8,'+encodeURIComponent(s);
+  }
+  function qr(seed){
+    var s=((seed+3)*2654435761)>>>0;
+    function rnd(){s^=s<<13;s>>>=0;s^=s>>>17;s^=s<<5;s>>>=0;return s/4294967296}
+    var c='';
+    for(var y=0;y<9;y++)for(var x=0;x<9;x++){
+      var f=(x<3&&y<3)||(x>5&&y<3)||(x<3&&y>5);
+      var on=f?!((x%6===1)&&(y%6===1)):rnd()>.5;
+      if(on)c+='<rect x="'+x+'" y="'+y+'" width="1" height="1"/>';
+    }
+    return '<svg class="qr" viewBox="0 0 9 9" fill="currentColor" aria-hidden="true">'+c+'</svg>';
+  }
+  var fmt=function(n){return n<0.05?'a few KB':(n>=10?n.toFixed(0):n.toFixed(1))+' MB'};
+  var KIND={note:'Note',photo:'Photo',video:'Video'};
+  var mmss=function(d){d=Math.round(d);return Math.floor(d/60)+':'+('0'+(d%60)).slice(-2)};
+
+  var S={view:'guest',screen:'home',signal:'good',items:[],pend:null,last:null,n:0,tray:false};
+
+  var ex=[
+    {kind:'note',who:'Aunt Lupe',text:'You carried every one of us through some hard year and never once made it feel like a favor. Happy 60th, big brother.'},
+    {kind:'photo',who:'Danny',caption:'The summer the truck broke down at the lake',url:art(0)},
+    {kind:'video',who:'Cousin Rae',url:art(2),dur:42,mb:19.2},
+    {kind:'note',who:'Marcus and Dee',text:'Thank you for teaching us to grill. Ours still does not come close to yours.'}
+  ];
+  ex.forEach(function(e){
+    S.items.push({id:++S.n,kind:e.kind,who:e.who,text:e.text||'',caption:e.caption||'',url:e.url||'',dur:e.dur||0,mb:e.mb||1,chunks:1,sent:1,status:'done',example:true,hidden:false});
+  });
+
+  /* navigation */
+  function go(name){
+    S.screen=name;
+    $$('[data-screen]').forEach(function(el){el.hidden=el.getAttribute('data-screen')!==name});
+    if(name==='home'){resetForms();updateCount()}
+    window.scrollTo(0,0);
+    renderDone();
+  }
+  function setView(v){
+    S.view=v;
+    $('#guest').hidden=v!=='guest';
+    $('#host').hidden=v!=='host';
+    $('#tab-guest').setAttribute('aria-selected',v==='guest');
+    $('#tab-host').setAttribute('aria-selected',v==='host');
+    if(v==='host')renderHost();
+    renderTray();
+    window.scrollTo(0,0);
+  }
+  function setSignal(s){
+    S.signal=s;
+    $$('[data-sig]').forEach(function(b){b.setAttribute('aria-checked',b.getAttribute('data-sig')===s)});
+    renderTray();renderDone();
+  }
+  function updateCount(){
+    var n=S.items.filter(function(i){return !i.hidden}).length;
+    $('#count').textContent=n+' memories in the book so far.';
+  }
+  function needName(){
+    var v=$('#who').value.trim();
+    if(!v){$('#nameErr').hidden=false;$('#who').focus();return false}
+    $('#nameErr').hidden=true;return true;
+  }
+
+  $('#tab-guest').addEventListener('click',function(){setView('guest')});
+  $('#tab-host').addEventListener('click',function(){setView('host')});
+  $$('[data-sig]').forEach(function(b){b.addEventListener('click',function(){setSignal(b.getAttribute('data-sig'))})});
+  $$('[data-go]').forEach(function(b){
+    b.addEventListener('click',function(){
+      var t=b.getAttribute('data-go');
+      if((t==='note'||t==='photo'||t==='video')&&!needName())return;
+      go(t);
+    });
+  });
+  $('#who').addEventListener('input',function(){if(this.value.trim())$('#nameErr').hidden=true});
+
+  /* forms */
+  function resetForms(){
+    $('#note').value='';$('#noteCount').textContent='0 / 600';$('#noteErr').hidden=true;
+    clearPend();
+    $('#photoCap').value='';
+    $('#photoIn').value='';$('#videoIn').value='';
+    ['photo','video'].forEach(function(k){
+      $('#'+k+'Drop').classList.remove('has');
+      $('#'+k+'Info').hidden=true;$('#'+k+'Err').hidden=true;
+    });
+    $('#photoBody').innerHTML='<span class="ic">'+svg('image')+'</span><b>Choose a photo</b><span>Opens your camera roll or camera</span>';
+    $('#videoBody').innerHTML='<span class="ic">'+svg('video')+'</span><b>Record or choose a video</b><span>Opens your camera or your library</span>';
+    $('#savePhoto').disabled=true;$('#saveVideo').disabled=true;
+  }
+  function clearPend(){
+    if(S.pend&&S.pend.blob){try{URL.revokeObjectURL(S.pend.url)}catch(e){}}
+    S.pend=null;
+  }
+
+  $('#note').addEventListener('input',function(){
+    $('#noteCount').textContent=this.value.length+' / 600';
+    if(this.value.trim().length>1)$('#noteErr').hidden=true;
+  });
+  $$('[data-start]').forEach(function(c){
+    c.addEventListener('click',function(){
+      var t=$('#note');
+      t.value=t.value?t.value+'\n'+c.getAttribute('data-start'):c.getAttribute('data-start');
+      t.focus();t.setSelectionRange(t.value.length,t.value.length);
+      $('#noteCount').textContent=t.value.length+' / 600';
+    });
+  });
+  $('#saveNote').addEventListener('click',function(){
+    var t=$('#note').value.trim();
+    if(t.length<2){$('#noteErr').hidden=false;return}
+    addItem({kind:'note',text:t,mb:0.002,chunks:1});
+  });
+
+  var photoEst=function(o){return Math.min(1.6,Math.max(.4,o*.3))};
+  var videoEst=function(o){return Math.min(30,Math.max(2,o*.3))};
+
+  function showPhoto(){
+    var p=S.pend;
+    $('#photoDrop').classList.add('has');
+    $('#photoBody').innerHTML='<img class="preview" alt="Your chosen photo" src="'+p.url+'"><span class="swap">Tap to choose a different photo</span>';
+    var i=$('#photoInfo');
+    i.hidden=false;
+    i.textContent='Original '+fmt(p.origMb)+'. Shrunk on your phone to about '+fmt(photoEst(p.origMb))+' before sending.';
+    $('#savePhoto').disabled=false;
+  }
+  function showVideo(){
+    var p=S.pend;
+    $('#videoDrop').classList.add('has');
+    var media=p.sample
+      ?'<img class="preview" alt="Sample video frame" src="'+p.url+'"><span class="dur">'+mmss(p.dur)+'</span>'
+      :'<video class="preview" muted playsinline preload="metadata" src="'+p.url+'#t=0.1"></video>';
+    $('#videoBody').innerHTML=media+'<span class="swap">Tap to choose a different video</span>';
+    var i=$('#videoInfo');
+    i.hidden=false;
+    var long=p.dur&&p.dur>60;
+    i.textContent='Original '+fmt(p.origMb)+'. Sent at 720p, about '+fmt(videoEst(p.origMb))+'.'+(long?' Only the first 60 seconds will be sent.':'');
+    $('#saveVideo').disabled=false;
+  }
+  $('#photoIn').addEventListener('change',function(e){
+    var f=e.target.files[0];if(!f)return;
+    if(f.type.indexOf('image/')!==0){$('#photoErr').textContent='That file is not a photo. Choose an image.';$('#photoErr').hidden=false;return}
+    $('#photoErr').hidden=true;clearPend();
+    S.pend={kind:'photo',url:URL.createObjectURL(f),blob:true,origMb:f.size/1048576};
+    showPhoto();
+  });
+  $('#photoSample').addEventListener('click',function(){
+    clearPend();$('#photoErr').hidden=true;
+    S.pend={kind:'photo',url:art(1),origMb:4.8,sample:true};
+    showPhoto();
+  });
+  $('#savePhoto').addEventListener('click',function(){
+    var p=S.pend;if(!p)return;
+    var mb=photoEst(p.origMb);
+    addItem({kind:'photo',url:p.url,blob:p.blob,caption:$('#photoCap').value.trim(),mb:mb,chunks:Math.max(1,Math.ceil(mb))});
+  });
+  $('#videoIn').addEventListener('change',function(e){
+    var f=e.target.files[0];if(!f)return;
+    if(f.type.indexOf('video/')!==0){$('#videoErr').textContent='That file is not a video. Choose a video clip.';$('#videoErr').hidden=false;return}
+    $('#videoErr').hidden=true;clearPend();
+    var url=URL.createObjectURL(f);
+    S.pend={kind:'video',url:url,blob:true,origMb:f.size/1048576,dur:0};
+    showVideo();
+    var v=document.createElement('video');
+    v.preload='metadata';
+    v.onloadedmetadata=function(){
+      if(S.pend&&S.pend.url===url&&isFinite(v.duration)){S.pend.dur=v.duration;showVideo()}
+    };
+    v.src=url;
+  });
+  $('#videoSample').addEventListener('click',function(){
+    clearPend();$('#videoErr').hidden=true;
+    S.pend={kind:'video',url:art(3),origMb:64,dur:42,sample:true};
+    showVideo();
+  });
+  $('#saveVideo').addEventListener('click',function(){
+    var p=S.pend;if(!p)return;
+    var mb=videoEst(p.origMb);
+    addItem({kind:'video',url:p.url,blob:p.blob,sample:p.sample,dur:Math.min(60,p.dur||0),mb:mb,chunks:Math.max(1,Math.ceil(mb))});
+  });
+
+  function addItem(d){
+    var it={id:++S.n,kind:d.kind,who:$('#who').value.trim(),text:d.text||'',caption:d.caption||'',url:d.url||'',blob:false,sample:!!d.sample,dur:d.dur||0,mb:d.mb,chunks:d.chunks,sent:0,status:'queued',example:false,hidden:false,note:null,ttl:0};
+    S.items.push(it);
+    S.last=it;
+    S.pend=null; /* keep the object URL alive for the host preview */
+    go('done');
+    renderTray();
+  }
+
+  /* upload engine: chunked, resumable, one clip at a time */
+  function tick(){
+    var cur=S.items.filter(function(i){return !i.example&&i.status!=='done'})[0];
+    if(!cur)return;
+    var prev=cur.status,finished=false;
+    if(cur.ttl>0){cur.ttl--;if(cur.ttl===0)cur.note=null}
+    if(S.signal==='off'){
+      cur.status='paused';cur.note=null;cur.ttl=0;
+    }else{
+      if(prev==='paused'){cur.note='Back online. Resuming at chunk '+(Math.floor(cur.sent)+1)+'. Nothing is re-sent.';cur.ttl=8}
+      cur.status='uploading';
+      var step=.9;
+      if(S.signal==='weak'){
+        if(Math.random()<.4){step=0;cur.note='Weak signal. Retrying chunk '+(Math.floor(cur.sent)+1)+'.';cur.ttl=3}
+        else step=.2;
+      }
+      cur.sent=Math.min(cur.chunks,cur.sent+step);
+      if(cur.sent>=cur.chunks){cur.status='done';cur.note=null;cur.ttl=0;finished=true}
+    }
+    renderTray();renderDone();
+    if(finished&&S.view==='host')renderHost();
+  }
+  setInterval(tick,300);
+
+  function pct(i){return i.status==='done'?100:Math.round(i.sent/i.chunks*100)}
+  function detail(i){
+    if(i.status==='done')return 'Sent. '+fmt(i.mb);
+    if(i.note)return i.note;
+    if(i.status==='paused')return 'Waiting for signal. Safe on your phone.';
+    if(i.status==='queued')return 'Saved on your phone. Next in line.';
+    var c=Math.min(i.chunks,Math.floor(i.sent)+1);
+    return 'Chunk '+c+' of '+i.chunks+'. '+fmt(i.sent/i.chunks*i.mb)+' of '+fmt(i.mb);
+  }
+  function stateWord(i){
+    return i.status==='done'?'Sent':i.status==='paused'?'Waiting':i.status==='queued'?'Saved':pct(i)+'%';
+  }
+  function card(i){
+    return '<div class="q-top"><span>'+KIND[i.kind]+' from '+esc(i.who)+'</span><span>'+stateWord(i)+'</span></div>'
+      +'<div class="meter'+(i.status==='done'?' ok':'')+'"><i style="width:'+pct(i)+'%"></i></div>'
+      +'<div class="q-detail">'+esc(detail(i))+'</div>';
+  }
+
+  var SIGTXT={good:'Good signal',weak:'Weak signal',off:'No signal'};
+  function renderTray(){
+    var mine=S.items.filter(function(i){return !i.example});
+    var tray=$('#tray');
+    tray.hidden=!(S.view==='guest'&&mine.length>0);
+    if(tray.hidden)return;
+    var done=mine.filter(function(i){return i.status==='done'}).length;
+    var paused=mine.some(function(i){return i.status==='paused'});
+    var avg=mine.reduce(function(a,i){return a+pct(i)},0)/mine.length;
+    $('#traySum').textContent=done===mine.length?'All sent':paused?'Waiting for signal':done+' of '+mine.length+' sent';
+    $('#trayFill').style.width=avg+'%';
+    $('#trayMeter').className='meter'+(done===mine.length?' ok':'');
+    var pill=$('#trayPill');pill.textContent=SIGTXT[S.signal];pill.setAttribute('data-s',S.signal);
+    if(S.tray){
+      $('#trayList').innerHTML=mine.map(function(i){return '<li class="qcard">'+card(i)+'</li>'}).join('');
+    }
+  }
+  $('#trayBtn').addEventListener('click',function(){
+    S.tray=!S.tray;
+    this.setAttribute('aria-expanded',S.tray);
+    $('#trayList').hidden=!S.tray;
+    renderTray();
+  });
+
+  function renderDone(){
+    var i=S.last;
+    if(S.screen==='done'&&i){
+      $('#doneCard').innerHTML=card(i);
+      if(i.status==='done'){
+        $('#doneTitle').textContent="Sent to Dad's book";
+        $('#doneSub').textContent='It is in the book now. Add another if you like.';
+      }else{
+        $('#doneTitle').textContent='Saved on your phone';
+        $('#doneSub').textContent=i.status==='paused'?'No signal right now. It sends as soon as one comes back.':'Sending in the background. Add another while you wait.';
+      }
+    }
+    if(S.screen==='thanks'){
+      var mine=S.items.filter(function(x){return !x.example});
+      var left=mine.filter(function(x){return x.status!=='done'}).length;
+      $('#thanksTitle').textContent='Thank you, '+($('#who').value.trim()||'friend');
+      $('#thanksSub').textContent=left?'Still sending '+left+' '+(left===1?'memory':'memories')+'. Keep this page open until the tray says All sent.':'Everything you added is in the book. Dad is going to love it.';
+    }
+  }
+
+  /* host */
+  function thumb(i){
+    if(i.kind==='note')return svg('pen');
+    if(i.kind==='photo'&&i.url)return '<img alt="" src="'+i.url+'">';
+    if(i.kind==='video'&&i.url&&(i.example||i.sample))return '<img alt="" src="'+i.url+'">';
+    return svg(i.kind==='photo'?'image':'video');
+  }
+  function renderHost(){
+    var vis=S.items.filter(function(i){return !i.hidden&&i.status==='done'});
+    var hid=S.items.filter(function(i){return i.hidden}).length;
+    $('#hostCount').textContent=vis.length+' in the book'+(hid?', '+hid+' hidden':'')+'.';
+    $('#rows').innerHTML=S.items.map(function(i){
+      var txt=i.kind==='note'?i.text:i.kind==='photo'?(i.caption||'Photo'):('Video'+(i.dur?', '+mmss(i.dur):''));
+      var tag=i.example?'<span class="tag">Example</span>':(i.status!=='done'?'<span class="tag sending">Sending</span>':'');
+      return '<li class="row'+(i.hidden?' off':'')+'"><div class="th">'+thumb(i)+'</div><div style="min-width:0"><div class="who">'+esc(i.who)+tag+'</div><div class="txt">'+esc(txt)+'</div></div><button class="mini" data-hide="'+i.id+'" aria-pressed="'+i.hidden+'">'+(i.hidden?'Show':'Hide')+'</button></li>';
+    }).join('');
+    var pages='<div class="page cover"><div><span class="eyebrow" style="color:inherit">Memory book</span><div class="sixty" aria-hidden="true">60</div></div><div><h3>Dad\'s 60th</h3><p class="cap-p" style="margin-top:6px">'+vis.length+' memories from family and friends</p></div></div>';
+    vis.forEach(function(i){
+      if(i.kind==='note'){
+        pages+='<div class="page"><p class="quote">'+esc(i.text)+'</p><div class="by">'+esc(i.who)+'</div></div>';
+      }else if(i.kind==='photo'){
+        pages+='<div class="page"><div class="pic">'+(i.url?'<img alt="" src="'+i.url+'">':svg('image',40))+'</div>'+(i.caption?'<p class="cap-p">'+esc(i.caption)+'</p>':'')+'<div class="by">'+esc(i.who)+'</div></div>';
+      }else{
+        var hasPic=i.url&&(i.example||i.sample);
+        pages+='<div class="page"><div class="pic">'+(hasPic?'<img alt="" src="'+i.url+'">':svg('video',40))+'</div><div class="scan">'+qr(i.id)+'<span>Scan to watch'+(i.dur?' ('+mmss(i.dur)+')':'')+'</span></div><div class="by">'+esc(i.who)+'</div></div>';
+      }
+    });
+    $('#book').innerHTML=pages;
+  }
+  $('#rows').addEventListener('click',function(e){
+    var b=e.target.closest('[data-hide]');if(!b)return;
+    var id=+b.getAttribute('data-hide');
+    S.items.forEach(function(i){if(i.id===id)i.hidden=!i.hidden});
+    renderHost();
+    var again=$('[data-hide="'+id+'"]');if(again)again.focus();
+  });
+
+  go('home');
+})();
+</script>

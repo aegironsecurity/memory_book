@@ -1,0 +1,8 @@
+node_modules/
+.deploy/
+export/
+*.log
+.DS_Store
+# backend/dist is committed on purpose (decision D28)
+backend/test/browser/media/
+backend/test/browser/out/

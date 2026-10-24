@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<title>Host | Don Manuel's 60th</title>
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="css/host.css">
+</head>
+<body>
+<div class="wrap wide">
+  <header class="top">
+    <span class="eyebrow">Host view</span>
+    <button class="langbtn" id="signOut" type="button" hidden>Sign out</button>
+  </header>
+
+  <!-- SIGN IN -->
+  <section class="screen" id="signin">
+    <h1>Host sign in</h1>
+    <form id="signinForm" class="panel" novalidate>
+      <div class="field">
+        <label for="email">Email</label>
+        <input type="email" id="email" autocomplete="username" inputmode="email" autocapitalize="off" spellcheck="false">
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <input type="password" id="password" autocomplete="current-password">
+      </div>
+      <div class="field" id="totpRow" hidden>
+        <label for="totp">Authenticator code</label>
+        <input type="text" id="totp" inputmode="numeric" autocomplete="one-time-code" maxlength="6">
+      </div>
+      <p class="err" id="signinErr" role="alert" hidden></p>
+      <button class="btn" id="signinGo" type="submit">Sign in</button>
+    </form>
+  </section>
+
+  <!-- DASHBOARD -->
+  <main id="dash" hidden>
+    <section class="screen">
+      <div>
+        <h1 id="hTitle">Memories</h1>
+        <p class="stat" id="hStats"></p>
+        <p class="stat" id="hWindow"></p>
+        <p class="err" id="hostErr" role="alert" hidden></p>
+      </div>
+
+      <div class="panel">
+        <h3>Table card</h3>
+        <p class="foot">Guests scan the QR code and type the code. Only the QR link is secret, so keep photos of the card off public posts.</p>
+        <div class="field">
+          <label for="cardCode">Code to print on the card</label>
+          <input type="text" id="cardCode" inputmode="numeric" maxlength="4" autocomplete="off">
+        </div>
+        <div id="cardPreview"></div>
+        <button class="btn" type="button" id="printCards">Print 6 cards</button>
+      </div>
+
+      <div class="panel">
+        <h3>Party code</h3>
+        <p class="foot">Changing it makes every phone ask for the new code before it sends. Leave blank for a random one.</p>
+        <div class="inline-form">
+          <input type="text" id="newCode" inputmode="numeric" maxlength="4" placeholder="4 digits" autocomplete="off">
+          <button class="mini" type="button" id="rotate">Change code</button>
+        </div>
+        <p class="stat" id="rotateMsg" hidden></p>
+      </div>
+
+      <div class="panel">
+        <h3>Upload window</h3>
+        <div class="row-actions">
+          <button class="mini" type="button" data-extend="24">Add 24 hours</button>
+          <button class="mini" type="button" data-extend="72">Add 3 days</button>
+          <button class="mini" type="button" id="closeNow">Close now</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>Everything that came in</h3>
+        <div class="row-actions">
+          <button class="mini" type="button" id="refresh">Refresh</button>
+          <button class="mini" type="button" id="exportJson">Download list (JSON)</button>
+        </div>
+        <p class="foot">Hidden memories stay out of the book. For all the original files at once, run scripts/export.sh from CloudShell.</p>
+        <ul class="rows" id="rows"></ul>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="sheet-print" id="sheet" aria-hidden="true"></div>
+
+<script src="vendor/qrcode.js"></script>
+<script type="module" src="js/host.js"></script>
+</body>
+</html>

@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<title>Don Manuel's 60th</title>
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <span class="eyebrow" data-i18n="brand.eyebrow">Memory book</span>
+    <button class="langbtn" id="langBtn" type="button" data-i18n="lang.toggle">Español</button>
+  </header>
+
+  <noscript><p class="lead">This page needs JavaScript to work.</p></noscript>
+
+  <main id="app">
+    <!-- BAD LINK -->
+    <section class="screen" data-screen="badlink" hidden>
+      <div class="hero">
+        <div class="sixty" aria-hidden="true">60</div>
+        <h1 tabindex="-1" data-i18n="link.badTitle">This link is not complete</h1>
+        <p class="lead" data-i18n="link.badBody"></p>
+      </div>
+    </section>
+
+    <!-- CLOSED -->
+    <section class="screen" data-screen="closed" hidden>
+      <div class="hero">
+        <div class="sixty" aria-hidden="true">60</div>
+        <h1 tabindex="-1" data-i18n="closed.title">The book is closed</h1>
+        <p class="lead" data-i18n="err.closed"></p>
+      </div>
+    </section>
+
+    <!-- GATE -->
+    <section class="screen" data-screen="gate" hidden>
+      <div class="hero">
+        <div class="sixty" aria-hidden="true">60</div>
+        <h1 tabindex="-1" data-i18n="gate.title"></h1>
+        <p class="lead" data-i18n="gate.lead"></p>
+      </div>
+      <form id="gateForm" class="field" novalidate>
+        <label for="gateCode" data-i18n="gate.label">Party code</label>
+        <input type="text" id="gateCode" class="codein" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" autocapitalize="off" spellcheck="false" aria-describedby="gateErr">
+        <p class="err" id="gateErr" role="alert" hidden></p>
+        <button class="btn gap" id="gateGo" type="submit" data-i18n="gate.go">Continue</button>
+      </form>
+      <p class="foot" data-i18n="gate.hint"></p>
+    </section>
+
+    <!-- HOME -->
+    <section class="screen" data-screen="home" hidden>
+      <div class="hero">
+        <div class="sixty" aria-hidden="true">60</div>
+        <h1 tabindex="-1" data-i18n="home.title"></h1>
+        <p class="lead" data-i18n="home.lead"></p>
+      </div>
+      <div class="field">
+        <label for="who" data-i18n="home.nameLabel">Your name</label>
+        <input type="text" id="who" maxlength="60" autocomplete="name" data-i18n-ph="home.namePh">
+        <p class="err" id="nameErr" role="alert" hidden data-i18n="home.nameErr"></p>
+      </div>
+      <div class="choices">
+        <button class="choice" type="button" data-go="note"><span class="ic" data-icon="pen"></span><span><b data-i18n="home.note"></b><span class="sub" data-i18n="home.noteSub"></span></span><span class="chev" data-icon="arrow"></span></button>
+        <button class="choice" type="button" data-go="photo"><span class="ic" data-icon="image"></span><span><b data-i18n="home.photo"></b><span class="sub" data-i18n="home.photoSub"></span></span><span class="chev" data-icon="arrow"></span></button>
+        <button class="choice" type="button" data-go="video"><span class="ic" data-icon="video"></span><span><b data-i18n="home.video"></b><span class="sub" data-i18n="home.videoSub"></span></span><span class="chev" data-icon="arrow"></span></button>
+      </div>
+      <p class="foot" id="addedCount" hidden></p>
+      <p class="foot" data-i18n="home.foot"></p>
+      <p class="hint" id="storageWarn" hidden data-i18n="storage.warn"></p>
+    </section>
+
+    <!-- NOTE -->
+    <section class="screen" data-screen="note" hidden>
+      <button class="back" type="button" data-go="home"><span data-icon="back"></span><span data-i18n="nav.back">Back</span></button>
+      <h2 tabindex="-1" data-i18n="note.title"></h2>
+      <div class="chips">
+        <button class="chip" type="button" data-start="note.chip1Start" data-i18n="note.chip1"></button>
+        <button class="chip" type="button" data-start="note.chip2Start" data-i18n="note.chip2"></button>
+        <button class="chip" type="button" data-start="note.chip3Start" data-i18n="note.chip3"></button>
+      </div>
+      <div>
+        <label class="lbl" for="note" data-i18n="note.label">Your note</label>
+        <textarea id="note" maxlength="600" data-i18n-ph="note.ph"></textarea>
+        <div class="count"><span id="noteErr" class="err inline" role="alert" hidden data-i18n="note.err"></span><span id="noteCount">0 / 600</span></div>
+      </div>
+      <button class="btn" type="button" id="saveNote" data-i18n="note.save">Save my note</button>
+    </section>
+
+    <!-- PHOTO -->
+    <section class="screen" data-screen="photo" hidden>
+      <button class="back" type="button" data-go="home"><span data-icon="back"></span><span data-i18n="nav.back">Back</span></button>
+      <h2 tabindex="-1" data-i18n="photo.title"></h2>
+      <label class="drop" id="photoDrop" for="photoIn">
+        <input type="file" id="photoIn" accept="image/*">
+        <div class="dz" id="photoEmpty"><span class="ic" data-icon="image"></span><b data-i18n="photo.choose"></b><span data-i18n="photo.chooseSub"></span></div>
+        <div id="photoFull" hidden>
+          <img class="preview" id="photoPrev" alt="">
+          <span class="swap" data-i18n="photo.change"></span>
+        </div>
+      </label>
+      <p class="meta" id="photoWorking" hidden data-i18n="photo.working"></p>
+      <p class="err" id="photoErr" role="alert" hidden></p>
+      <p class="meta" id="photoInfo" hidden></p>
+      <div class="field">
+        <label for="photoCap" data-i18n="photo.capLabel">Caption (optional)</label>
+        <input type="text" id="photoCap" maxlength="90" data-i18n-ph="photo.capPh">
+      </div>
+      <button class="btn" type="button" id="savePhoto" disabled data-i18n="photo.save">Save my photo</button>
+    </section>
+
+    <!-- VIDEO -->
+    <section class="screen" data-screen="video" hidden>
+      <button class="back" type="button" id="videoBack"><span data-icon="back"></span><span data-i18n="nav.back">Back</span></button>
+      <h2 tabindex="-1" data-i18n="video.title"></h2>
+
+      <div id="vChoose" class="choices">
+        <button class="choice" type="button" id="vRecord"><span class="ic" data-icon="video"></span><span><b data-i18n="video.record"></b><span class="sub" data-i18n="video.recordSub"></span></span><span class="chev" data-icon="arrow"></span></button>
+        <label class="choice as-label" for="videoIn"><span class="ic" data-icon="image"></span><span><b data-i18n="video.library"></b><span class="sub" data-i18n="video.librarySub"></span></span><span class="chev" data-icon="arrow"></span></label>
+        <input class="hidden-file" type="file" id="videoIn" accept="video/*">
+      </div>
+
+      <div id="vLive" hidden>
+        <div class="stage">
+          <video id="vidLive" muted playsinline></video>
+          <span class="rec" id="recBadge" hidden><i></i><span id="recTime">0:00</span></span>
+        </div>
+        <div class="btns gap">
+          <button class="btn" type="button" id="recStart" data-i18n="video.start">Start recording</button>
+          <button class="btn stop" type="button" id="recStop" hidden data-i18n="video.stop">Stop</button>
+          <button class="btn ghost" type="button" id="recFlip" data-i18n="video.flip">Flip camera</button>
+          <button class="btn ghost" type="button" id="recCancel" data-i18n="video.cancel">Cancel</button>
+        </div>
+      </div>
+
+      <div id="vReview" hidden>
+        <div class="stage"><video id="vidReview" controls playsinline preload="metadata"></video></div>
+        <p class="meta" id="videoInfo"></p>
+      </div>
+
+      <p class="meta" id="videoWorking" hidden data-i18n="video.working"></p>
+      <p class="err" id="videoErr" role="alert" hidden></p>
+      <div class="btns" id="vSaveRow" hidden>
+        <button class="btn" type="button" id="saveVideo" data-i18n="video.save">Save my video</button>
+        <button class="btn ghost" type="button" id="vAgain" data-i18n="video.retake">Record again</button>
+      </div>
+    </section>
+
+    <!-- DONE -->
+    <section class="screen" data-screen="done" hidden>
+      <div class="done-head">
+        <div class="seal"><span data-icon="check"></span></div>
+        <h2 id="doneTitle" tabindex="-1"></h2>
+        <p class="lead" id="doneSub"></p>
+      </div>
+      <div class="qcard" id="doneCard"></div>
+      <p class="hint" data-i18n="done.hint"></p>
+      <div class="btns">
+        <button class="btn" type="button" data-go="home" data-i18n="done.another">Add another memory</button>
+        <button class="btn ghost" type="button" data-go="thanks" data-i18n="done.finish">I'm done</button>
+      </div>
+    </section>
+
+    <!-- THANKS -->
+    <section class="screen" data-screen="thanks" hidden>
+      <div class="hero">
+        <div class="sixty" aria-hidden="true">60</div>
+        <h1 id="thanksTitle" tabindex="-1"></h1>
+        <p class="lead" id="thanksSub"></p>
+        <p class="foot" data-i18n="thanks.again"></p>
+      </div>
+      <button class="btn ghost" type="button" data-go="home" data-i18n="done.another">Add another memory</button>
+    </section>
+  </main>
+</div>
+
+<!-- Asks for the code again when it was changed or the session ran out -->
+<div class="overlay" id="auth" role="dialog" aria-modal="true" aria-labelledby="authTitle" hidden>
+  <form class="sheet" id="authForm" novalidate>
+    <h2 id="authTitle" data-i18n="auth.title">Enter the code again</h2>
+    <p class="lead" data-i18n="auth.lead"></p>
+    <input type="text" id="authCode" class="codein" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" aria-labelledby="authTitle">
+    <p class="err" id="authErr" role="alert" hidden></p>
+    <button class="btn" type="submit" data-i18n="gate.go">Continue</button>
+  </form>
+</div>
+
+<aside class="tray" id="tray" hidden>
+  <div class="tray-in">
+    <button class="tray-head" id="trayBtn" type="button" aria-expanded="false" aria-controls="trayList">
+      <span class="tray-sum"><b id="traySum"></b><span class="meter" id="trayMeter"><i id="trayFill"></i></span><span class="q-detail" id="trayNote"></span></span>
+      <span class="pill" id="trayPill" data-s="good"></span>
+      <span class="chev" data-icon="arrow"></span>
+    </button>
+    <ul class="tray-list" id="trayList" hidden></ul>
+  </div>
+</aside>
+
+<script type="module" src="js/guest.js"></script>
+</body>
+</html>

@@ -1,0 +1,29 @@
+customHeaders:
+  - pattern: '**/*'
+    headers:
+      - key: Strict-Transport-Security
+        value: 'max-age=31536000; includeSubDomains'
+      - key: X-Content-Type-Options
+        value: nosniff
+      - key: Referrer-Policy
+        value: no-referrer
+      - key: Permissions-Policy
+        value: 'camera=(self), microphone=(self), geolocation=(), payment=()'
+      - key: Content-Security-Policy
+        value: "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' blob: data: https://*.s3.us-west-2.amazonaws.com; media-src 'self' blob: https://*.s3.us-west-2.amazonaws.com; font-src 'self'; connect-src 'self' https://*.execute-api.us-west-2.amazonaws.com https://*.s3.us-west-2.amazonaws.com https://cognito-idp.us-west-2.amazonaws.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+  - pattern: '**/*.html'
+    headers:
+      - key: Cache-Control
+        value: 'no-cache'
+  - pattern: '**/*.js'
+    headers:
+      - key: Cache-Control
+        value: 'no-cache'
+  - pattern: '**/*.css'
+    headers:
+      - key: Cache-Control
+        value: 'no-cache'
+  - pattern: '**/*.woff2'
+    headers:
+      - key: Cache-Control
+        value: 'public, max-age=31536000, immutable'
