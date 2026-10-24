@@ -33,7 +33,16 @@ echo
 TMP="$(mktemp)"
 trap 'rm -f "$TMP"' EXIT
 chmod 600 "$TMP"
-jq -n --arg pool "$POOL" --arg user "$EMAIL" --arg pw "$PW1" \
-  '{UserPoolId: $pool, Username: $user, Password: $pw, Permanent: true}' >"$TMP"
-aws cognito-idp admin-set-user-password --cli-input-json "file://$TMP"
+if command -v jq >/dev/null 2>&1; then
+  jq -n --arg pool "$POOL" --arg user "$EMAIL" --arg pw "$PW1" \
+    '{UserPoolId: $pool, Username: $user, Password: $pw, Permanent: true}' >"$TMP"
+else
+  need node "Install jq or Node.js, or run this from AWS CloudShell."
+  MB_POOL="$POOL" MB_USER="$EMAIL" MB_PW="$PW1" node -e 'const e = process.env;
+    process.stdout.write(JSON.stringify({UserPoolId: e.MB_POOL, Username: e.MB_USER, Password: e.MB_PW, Permanent: true}));' >"$TMP"
+fi
+# aws.exe on Windows needs a Windows path for file://.
+TMP_ARG="$TMP"
+command -v cygpath >/dev/null 2>&1 && TMP_ARG="$(cygpath -w "$TMP")"
+aws cognito-idp admin-set-user-password --cli-input-json "file://$TMP_ARG"
 echo "Done. Sign in at your site's /host.html with $EMAIL"

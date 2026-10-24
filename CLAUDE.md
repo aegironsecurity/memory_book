@@ -18,7 +18,7 @@ A web app where guests at Don Manuel's 60th birthday party (about 100 people, at
 
 ## Status (as built)
 
-Built and tested in the Claude Code container, not yet deployed to AWS.
+Deployed 2026-10-24 around 12:30 PDT into account 139023233949 (owner confirmed this account, signed in as root through `aws login`, CLI profile `memorybook`). Backend stack `memory-book-don-manuel` in us-west-2. Amplify app `memory_book` (id d2938vpg535zho) is in us-east-1 because it was created there; it serves globally, so it was kept. Site `https://main.d2938vpg535zho.amplifyapp.com`, repo `github.com/aegironsecurity/memory_book` (Amplify linked, builds on push to main). The scripts run from Windows Git Bash too (CRLF stripped from aws.exe output, `node` fallback when `jq` is missing).
 
 - `backend/` Lambda handlers (guest and host), esbuild bundles committed in `backend/dist`.
 - `frontend/` guest page, host page, service worker. No build step.
@@ -89,7 +89,7 @@ Status key: DECIDED (owner chose), DEFAULT (Claude recommendation, owner has not
 
 ## Open items for the owner
 
-- GitHub owner and repo name, and whether the Amplify GitHub app is installed on it. The owner says the repo already exists but did not give its name. Only needed to push.
+- Amplify app is in us-east-1, not us-west-2 (D07). Harmless; recreate later only if wanted.
 - Confirm `1966` stays (D26) given it is guessable.
 
 ## Architecture

@@ -1,7 +1,7 @@
-// Rewritten by scripts/deploy.sh with the real values for this AWS account. Safe to commit: nothing here is secret.
+// Written by scripts/deploy.sh. Safe to commit: nothing here is secret.
 export const CONFIG = {
-  apiUrl: '',
+  apiUrl: 'https://vzxp4axe2i.execute-api.us-west-2.amazonaws.com',
   region: 'us-west-2',
-  userPoolClientId: '',
+  userPoolClientId: '29ni7dt8ijq6u9an4d1dofmm79',
   honoree: 'Don Manuel',
 };

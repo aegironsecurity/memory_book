@@ -11,6 +11,14 @@ export HONOREE
 CLOSES_AT="2026-10-27T00:00:00Z"
 export CLOSES_AT
 
+# On Windows (Git Bash) aws.exe ends lines with CRLF, which would leak a carriage return into every
+# captured value. Strip it there. CloudShell and Linux are unaffected.
+case "$(uname -s)" in
+  MINGW* | MSYS* | CYGWIN*)
+    aws() { command aws "$@" | tr -d '\r'; }
+    ;;
+esac
+
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 STATE_DIR="$ROOT/.deploy"
 mkdir -p "$STATE_DIR"
