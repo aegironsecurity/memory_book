@@ -1,26 +1,42 @@
 // Builds 3D printable STL files for a standing QR sign: a white plate, the black QR modules that sit on
-// top of it, and a black stand with a slot the plate drops into. Plate and modules share one coordinate
-// frame, so a slicer can load them as one object with two parts (one filament each).
+// top of it with a line or two of raised text under the code, and a black stand with a slot the plate drops
+// into. Plate and black parts share one coordinate frame, so a slicer can load them as one object with two
+// parts (one filament each).
 //
-//   node scripts/qr-stl.mjs <guest link> [out dir]
+//   node scripts/qr-stl.mjs <guest link> [out dir] [--text "LINE ONE|line two"] [--font file.ttf]
+//
+// Text needs opentype.js and earcut (backend dev dependencies). The default font is Segoe UI Black.
 //
 // Uses the same vendored qrcode-generator as the host page, at error correction level Q so a few bad
 // layers or a scuff still scan. Units are millimetres.
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import vm from 'node:vm';
+import { createRequire } from 'node:module';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
-const link = process.argv[2];
-const outDir = process.argv[3] || join(ROOT, 'print');
+const args = process.argv.slice(2);
+const flag = (name, fallback) => {
+  const i = args.indexOf(name);
+  if (i < 0) return fallback;
+  const v = args[i + 1];
+  args.splice(i, 2);
+  return v;
+};
+const TEXT = flag('--text', 'SHARE YOUR PHOTOS|Comparte tus fotos');
+const FONT = flag('--font', 'C:/Windows/Fonts/seguibl.ttf');
+const link = args[0];
+const outDir = args[1] || join(ROOT, 'print');
 if (!/^https:\/\/\S+$/.test(link || '')) {
   console.error('Usage: node scripts/qr-stl.mjs https://<site>/#e=<eventId> [out dir]');
   process.exit(1);
 }
 
-const QR_SIZE = 140; // width of the QR including its white quiet zone
+const PLATE_W = 140;
+const QR_SIZE = 128; // width of the QR including its white quiet zone
 const QUIET = 4; // modules of white border, as the QR spec asks
+const TEXT_BAND = TEXT ? 30 : 0; // room for the text between the code and the stand
 const BOTTOM = 20; // plain white strip at the bottom that goes into the stand
 const PLATE_T = 3; // white plate thickness
 const INK_T = 1; // height of the black modules on top of the plate
@@ -37,7 +53,8 @@ qr.addData(link);
 qr.make();
 const n = qr.getModuleCount();
 const s = QR_SIZE / (n + 2 * QUIET);
-const PLATE_H = QR_SIZE + BOTTOM;
+const PLATE_H = QR_SIZE + TEXT_BAND + BOTTOM; // 178 mm with text, fits a 180 mm bed
+const QR_X = (PLATE_W - QR_SIZE) / 2;
 
 // ---- STL helpers ----
 function stl(tris) {
@@ -76,7 +93,7 @@ function box(t, x0, y0, z0, x1, y1, z1) {
 
 // ---- White plate ----
 const plate = [];
-box(plate, 0, 0, 0, QR_SIZE, PLATE_H, PLATE_T);
+box(plate, 0, 0, 0, PLATE_W, PLATE_H, PLATE_T);
 
 // ---- Black modules: one closed surface, side walls only where the neighbour is white ----
 const dark = (r, c) => r >= 0 && c >= 0 && r < n && c < n && qr.isDark(r, c);
@@ -86,7 +103,7 @@ const z1 = PLATE_T + INK_T;
 for (let r = 0; r < n; r++) {
   for (let c = 0; c < n; c++) {
     if (!dark(r, c)) continue;
-    const x0 = (c + QUIET) * s;
+    const x0 = QR_X + (c + QUIET) * s;
     const x1 = x0 + s;
     const y1 = PLATE_H - (r + QUIET) * s; // row 0 is the top of the sign
     const y0 = y1 - s;
@@ -96,6 +113,94 @@ for (let r = 0; r < n; r++) {
     if (!dark(r - 1, c)) quad(ink, [x1, y1, z0], [x0, y1, z0], [x0, y1, z1], [x1, y1, z1]);
     if (!dark(r, c - 1)) quad(ink, [x0, y1, z0], [x0, y0, z0], [x0, y0, z1], [x0, y1, z1]);
     if (!dark(r, c + 1)) quad(ink, [x1, y0, z0], [x1, y1, z0], [x1, y1, z1], [x1, y0, z1]);
+  }
+}
+
+// ---- Raised text in the band under the code ----
+function textSolid(t, font, str, capMm, baselineY, maxW) {
+  const cap = (font.tables.os2 && font.tables.os2.sCapHeight) || font.unitsPerEm * 0.7;
+  let size = (capMm * font.unitsPerEm) / cap;
+  const width = font.getAdvanceWidth(str, size);
+  if (width > maxW) size *= maxW / width;
+  const x0 = (PLATE_W - font.getAdvanceWidth(str, size)) / 2;
+  // Flatten the outline into closed rings (font y points down in getPath, so flip it).
+  const rings = [];
+  let ring = null;
+  let last = null;
+  const pt = (x, y) => [x0 + x, baselineY - y];
+  for (const c of font.getPath(str, 0, 0, size).commands) {
+    if (c.type === 'M') {
+      ring = [pt(c.x, c.y)];
+      rings.push(ring);
+    } else if (c.type === 'L') ring.push(pt(c.x, c.y));
+    else if (c.type === 'Q' || c.type === 'C') {
+      for (let i = 1; i <= 8; i++) {
+        const u = i / 8;
+        const v = 1 - u;
+        const x = c.type === 'Q' ? v * v * last.x + 2 * v * u * c.x1 + u * u * c.x : v * v * v * last.x + 3 * v * v * u * c.x1 + 3 * v * u * u * c.x2 + u * u * u * c.x;
+        const y = c.type === 'Q' ? v * v * last.y + 2 * v * u * c.y1 + u * u * c.y : v * v * v * last.y + 3 * v * v * u * c.y1 + 3 * v * u * u * c.y2 + u * u * u * c.y;
+        ring.push(pt(x, y));
+      }
+    }
+    if (c.type !== 'Z') last = { x: c.x, y: c.y };
+  }
+  const clean = rings
+    .map((r) => r.filter((p, i) => i === 0 || Math.hypot(p[0] - r[i - 1][0], p[1] - r[i - 1][1]) > 1e-4))
+    .map((r) => (Math.hypot(r[0][0] - r[r.length - 1][0], r[0][1] - r[r.length - 1][1]) < 1e-4 ? r.slice(0, -1) : r))
+    .filter((r) => r.length >= 3);
+  const area = (r) => r.reduce((a, p, i) => a + p[0] * r[(i + 1) % r.length][1] - r[(i + 1) % r.length][0] * p[1], 0) / 2;
+  const inside = (p, r) => {
+    let hit = false;
+    for (let i = 0, j = r.length - 1; i < r.length; j = i++) {
+      if (r[i][1] > p[1] !== r[j][1] > p[1] && p[0] < ((r[j][0] - r[i][0]) * (p[1] - r[i][1])) / (r[j][1] - r[i][1]) + r[i][0]) hit = !hit;
+    }
+    return hit;
+  };
+  // Even nesting depth is solid, odd is a hole (the inside of an o or an e).
+  const info = clean.map((r) => ({ r, depth: clean.filter((o) => o !== r && inside(r[0], o)).length, a: Math.abs(area(r)) }));
+  for (const outer of info.filter((x) => x.depth % 2 === 0)) {
+    const ccwOuter = area(outer.r) > 0 ? outer.r : outer.r.slice().reverse();
+    const holes = info
+      .filter((x) => x.depth === outer.depth + 1 && inside(x.r[0], outer.r))
+      .map((x) => (area(x.r) < 0 ? x.r : x.r.slice().reverse()));
+    const flat = [];
+    const holeIdx = [];
+    for (const p of ccwOuter) flat.push(p[0], p[1]);
+    for (const h of holes) {
+      holeIdx.push(flat.length / 2);
+      for (const p of h) flat.push(p[0], p[1]);
+    }
+    const tris = earcut(flat, holeIdx);
+    const P = (i, z) => [flat[2 * i], flat[2 * i + 1], z];
+    for (let i = 0; i < tris.length; i += 3) {
+      let [a, b, c] = [tris[i], tris[i + 1], tris[i + 2]];
+      const sa = (flat[2 * b] - flat[2 * a]) * (flat[2 * c + 1] - flat[2 * a + 1]) - (flat[2 * c] - flat[2 * a]) * (flat[2 * b + 1] - flat[2 * a + 1]);
+      if (sa < 0) [b, c] = [c, b];
+      t.push([P(a, z1), P(b, z1), P(c, z1)], [P(a, z0), P(c, z0), P(b, z0)]);
+    }
+    for (const r of [ccwOuter, ...holes]) {
+      for (let i = 0; i < r.length; i++) {
+        const p = r[i];
+        const q = r[(i + 1) % r.length];
+        quad(t, [p[0], p[1], z0], [q[0], q[1], z0], [q[0], q[1], z1], [p[0], p[1], z1]);
+      }
+    }
+  }
+}
+
+let earcut = null;
+if (TEXT) {
+  const req = createRequire(join(ROOT, 'backend/package.json'));
+  const opentype = req('opentype.js');
+  earcut = (await import(pathToFileURL(req.resolve('earcut')).href)).default;
+  const font = opentype.loadSync(FONT);
+  const [l1, l2] = TEXT.split('|');
+  const top = BOTTOM + TEXT_BAND;
+  if (l2) {
+    textSolid(ink, font, l1, 8, top - 11, PLATE_W - 16);
+    textSolid(ink, font, l2, 5.5, top - 23, PLATE_W - 24);
+  } else {
+    textSolid(ink, font, l1, 10, top - 18, PLATE_W - 16);
   }
 }
 
@@ -162,5 +267,5 @@ writeFileSync(join(outDir, 'qr-plate-white.stl'), stl(plate));
 writeFileSync(join(outDir, 'qr-code-black.stl'), stl(ink));
 writeFileSync(join(outDir, 'qr-stand-black.stl'), stl(stand));
 console.log(`QR version ${(n - 17) / 4}, ${n} x ${n} modules, ${s.toFixed(2)} mm each, error correction Q`);
-console.log(`Plate ${QR_SIZE} x ${PLATE_H} x ${PLATE_T} mm, black modules ${INK_T} mm tall, stand ${STAND_W} x 70 mm`);
+console.log(`Plate ${PLATE_W} x ${PLATE_H} x ${PLATE_T} mm, black modules ${INK_T} mm tall, stand ${STAND_W} x 70 mm`);
 console.log(`Wrote ${outDir}`);
