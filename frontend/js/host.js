@@ -2,7 +2,7 @@
 import { CONFIG } from './config.js';
 import { createCognito, AuthError } from './cognito.js';
 import { h } from './dom.js';
-import { guestUrl, qrSvg, fmtWhen, exportJson } from './hostlib.js';
+import { guestUrl, qrSvg, fmtWhen, exportJson, optInsCsv } from './hostlib.js';
 import { mmss, fmtBytes } from './policy.js';
 
 const $ = (s, r = document) => r.querySelector(s);
@@ -248,11 +248,19 @@ function rowEl(m) {
   );
 }
 
+function renderOptIns() {
+  const list = S.data.optIns || [];
+  $('#optStats').textContent = list.length === 1 ? '1 guest wants the book' : `${list.length} guests want the book`;
+  $('#exportCsv').disabled = list.length === 0;
+  $('#optins').replaceChildren(...list.map((o) => h('li', null, h('b', null, o.name), ' ', h('span', { class: 'mail' }, o.email))));
+}
+
 function render() {
   renderStats();
   // Rebuild the list without losing playing videos: skip rebuild while one is playing.
   const playing = $$('#rows video').some((v) => !v.paused && !v.ended);
   if (!playing) $('#rows').replaceChildren(...S.data.memories.slice().reverse().map(rowEl));
+  renderOptIns();
   renderCard();
 }
 
@@ -342,8 +350,16 @@ function printCards() {
 }
 
 function downloadJson() {
-  const blob = new Blob([exportJson(S.data)], { type: 'application/json' });
-  const a = h('a', { href: URL.createObjectURL(blob), download: 'memory-book-list.json' });
+  saveFile(exportJson(S.data), 'application/json', 'memory-book-list.json');
+}
+
+function downloadCsv() {
+  saveFile(optInsCsv(S.data.optIns), 'text/csv', 'memory-book-emails.csv');
+}
+
+function saveFile(text, type, filename) {
+  const blob = new Blob([text], { type });
+  const a = h('a', { href: URL.createObjectURL(blob), download: filename });
   document.body.append(a);
   a.click();
   a.remove();
@@ -359,6 +375,7 @@ function boot() {
   $('#rotate').addEventListener('click', rotate);
   $('#printCards').addEventListener('click', printCards);
   $('#exportJson').addEventListener('click', downloadJson);
+  $('#exportCsv').addEventListener('click', downloadCsv);
   $('#cardCode').addEventListener('input', () => {
     $('#cardCode').value = $('#cardCode').value.replace(/\D/g, '').slice(0, 4);
     ls.set('mbh.code', $('#cardCode').value);

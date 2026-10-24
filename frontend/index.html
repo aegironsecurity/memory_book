@@ -71,6 +71,7 @@
         <button class="choice" type="button" data-go="photo"><span class="ic" data-icon="image"></span><span><b data-i18n="home.photo"></b><span class="sub" data-i18n="home.photoSub"></span></span><span class="chev" data-icon="arrow"></span></button>
         <button class="choice" type="button" data-go="video"><span class="ic" data-icon="video"></span><span><b data-i18n="home.video"></b><span class="sub" data-i18n="home.videoSub"></span></span><span class="chev" data-icon="arrow"></span></button>
       </div>
+      <button class="choice book-choice" type="button" data-go="book"><span class="ic" data-icon="mail"></span><span><b data-i18n="book.entry"></b><span class="sub" data-i18n="book.entrySub"></span></span><span class="chev" data-icon="arrow"></span></button>
       <p class="foot" id="addedCount" hidden></p>
       <p class="foot" data-i18n="home.foot"></p>
       <p class="hint" id="storageWarn" hidden data-i18n="storage.warn"></p>
@@ -175,7 +176,38 @@
         <p class="lead" id="thanksSub"></p>
         <p class="foot" data-i18n="thanks.again"></p>
       </div>
+      <button class="btn" type="button" data-go="book" id="thanksBook" data-i18n="book.entry">Want a copy of the book?</button>
       <button class="btn ghost" type="button" data-go="home" data-i18n="done.another">Add another memory</button>
+    </section>
+
+    <!-- BOOK SIGN-UP -->
+    <section class="screen" data-screen="book" hidden>
+      <button class="back" type="button" data-go="home"><span data-icon="back"></span><span data-i18n="nav.back">Back</span></button>
+      <h2 tabindex="-1" data-i18n="book.title"></h2>
+      <p class="lead" data-i18n="book.lead"></p>
+      <p class="hint" id="bookNote" hidden></p>
+      <form id="bookForm" novalidate>
+        <div class="field">
+          <label for="bookName" data-i18n="home.nameLabel">Your name</label>
+          <input type="text" id="bookName" maxlength="60" autocomplete="name">
+        </div>
+        <div class="field gap">
+          <label for="bookEmail" data-i18n="book.emailLabel">Email</label>
+          <input type="email" id="bookEmail" maxlength="254" autocomplete="email" inputmode="email" autocapitalize="off" spellcheck="false" data-i18n-ph="book.emailPh">
+        </div>
+        <label class="check gap" for="bookOk"><input type="checkbox" id="bookOk"><span data-i18n="book.consent"></span></label>
+        <p class="err" id="bookErr" role="alert" hidden></p>
+        <button class="btn gap" id="bookGo" type="submit" data-i18n="book.save">Send me the book</button>
+        <p class="foot gap" data-i18n="book.privacy"></p>
+      </form>
+      <div id="bookDone" hidden>
+        <p class="hint" id="bookDoneMsg"></p>
+        <div class="btns gap">
+          <button class="btn" type="button" data-go="home" data-i18n="book.back">Back to memories</button>
+          <button class="btn ghost" type="button" id="bookEdit" data-i18n="book.edit">Change email</button>
+          <button class="btn ghost" type="button" id="bookRemove" data-i18n="book.remove">Remove me</button>
+        </div>
+      </div>
     </section>
   </main>
 </div>

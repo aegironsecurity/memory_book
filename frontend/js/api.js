@@ -47,6 +47,7 @@ export function createApi({ base, getToken, timeoutMs = 20000, fetchImpl }) {
     createMemory: (payload) => request('POST', '/guest/memories', payload),
     parts: (id, nums) => request('POST', `/guest/memories/${encodeURIComponent(id)}/parts`, { partNumbers: nums }),
     complete: (id) => request('POST', `/guest/memories/${encodeURIComponent(id)}/complete`, {}),
+    optIn: (payload) => request('POST', '/guest/optin', payload),
     abort: (id) => request('DELETE', `/guest/memories/${encodeURIComponent(id)}`),
   };
 }

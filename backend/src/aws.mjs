@@ -38,6 +38,25 @@ export function realDeps(env = process.env) {
 
   let secretCache = null;
 
+  async function queryPrefix(eid, prefix) {
+    const out = [];
+    let key;
+    do {
+      const r = await ddb.send(
+        new QueryCommand({
+          TableName: table,
+          KeyConditionExpression: 'PK = :pk AND begins_with(SK, :p)',
+          ExpressionAttributeValues: { ':pk': pk(eid), ':p': prefix },
+          ExclusiveStartKey: key,
+          ConsistentRead: true,
+        }),
+      );
+      out.push(...(r.Items || []));
+      key = r.LastEvaluatedKey;
+    } while (key);
+    return out;
+  }
+
   const db = {
     async getEvent(eid) {
       const r = await ddb.send(new GetCommand({ TableName: table, Key: { PK: pk(eid), SK: 'META' }, ConsistentRead: true }));
@@ -75,23 +94,20 @@ export function realDeps(env = process.env) {
       await ddb.send(new DeleteCommand({ TableName: table, Key: { PK: pk(eid), SK: `MEM#${mid}` } }));
     },
 
+    async putOptIn(eid, gid, item) {
+      await ddb.send(new PutCommand({ TableName: table, Item: { PK: pk(eid), SK: `OPTIN#${gid}`, ...item } }));
+    },
+
+    async deleteOptIn(eid, gid) {
+      await ddb.send(new DeleteCommand({ TableName: table, Key: { PK: pk(eid), SK: `OPTIN#${gid}` } }));
+    },
+
+    async listOptIns(eid) {
+      return queryPrefix(eid, 'OPTIN#');
+    },
+
     async listMemories(eid) {
-      const out = [];
-      let key;
-      do {
-        const r = await ddb.send(
-          new QueryCommand({
-            TableName: table,
-            KeyConditionExpression: 'PK = :pk AND begins_with(SK, :p)',
-            ExpressionAttributeValues: { ':pk': pk(eid), ':p': 'MEM#' },
-            ExclusiveStartKey: key,
-            ConsistentRead: true,
-          }),
-        );
-        out.push(...(r.Items || []));
-        key = r.LastEvaluatedKey;
-      } while (key);
-      return out;
+      return queryPrefix(eid, 'MEM#');
     },
 
     // Atomically reserves one file and `bytes` of quota for a guest. Returns false when over a cap.

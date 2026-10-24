@@ -65,7 +65,10 @@ export function createHostHandler(deps) {
       pending: memories.filter((m) => m.status === 'pending').length,
       hidden: memories.filter((m) => m.hidden).length,
     };
-    return json(200, { event: summary(eid, ev), counts, memories });
+    const optIns = (await db.listOptIns(eid))
+      .map((o) => ({ name: o.name, email: o.email, updatedAt: o.updatedAt }))
+      .sort((x, y) => (x.name || '').localeCompare(y.name || ''));
+    return json(200, { event: summary(eid, ev), counts, memories, optIns });
   }
 
   async function setHidden(event, hidden) {

@@ -48,6 +48,7 @@ let PORT = 0;
 const ROUTES = [
   ['POST', /^\/api\/guest\/start$/, 'POST /guest/start'],
   ['POST', /^\/api\/guest\/memories$/, 'POST /guest/memories'],
+  ['POST', /^\/api\/guest\/optin$/, 'POST /guest/optin'],
   ['POST', /^\/api\/guest\/memories\/([^/]+)\/parts$/, 'POST /guest/memories/{id}/parts'],
   ['POST', /^\/api\/guest\/memories\/([^/]+)\/complete$/, 'POST /guest/memories/{id}/complete'],
   ['DELETE', /^\/api\/guest\/memories\/([^/]+)$/, 'DELETE /guest/memories/{id}'],
@@ -503,6 +504,40 @@ await step('tray shows every item and the thanks page says all sent', async () =
   assert((await p.textContent('#thanksSub')).includes('in the book'), 'thanks text');
 });
 
+await step('book sign-up: checks name, email and consent, saves once, survives a reload, can be removed', async () => {
+  const p = main.page;
+  await p.click('#thanksBook');
+  await screenIs(p, 'book');
+  eq(await p.inputValue('#bookName'), 'Ana Lopez', 'name carried over');
+  await p.fill('#bookEmail', 'ana@example');
+  await p.click('#bookGo');
+  eq(await p.getAttribute('#bookErr', 'data-key'), 'book.errEmail', 'bad email caught');
+  await p.fill('#bookEmail', 'Ana.Lopez@Example.com');
+  await p.click('#bookGo');
+  eq(await p.getAttribute('#bookErr', 'data-key'), 'book.errConsent', 'consent required');
+  await p.check('#bookOk');
+  await p.click('#bookGo');
+  await p.waitForSelector('#bookDone:not([hidden])');
+  assert((await p.textContent('#bookDoneMsg')).includes('ana.lopez@example.com'), 'confirmation shows the email');
+  eq(f.helpers.optIns.size, 1, 'one sign-up on the server');
+  await p.screenshot({ path: path.join(SHOTS, '10b-book.png') });
+  await p.reload();
+  await screenIs(p, 'home');
+  await p.click('[data-screen="home"] [data-go="book"]');
+  await p.waitForSelector('#bookDone:not([hidden])');
+  await p.click('#bookRemove');
+  await p.waitForSelector('#bookForm:not([hidden])');
+  eq(f.helpers.optIns.size, 0, 'removed on the server');
+  await p.fill('#bookEmail', 'ana.lopez@example.com');
+  await p.check('#bookOk');
+  await p.click('#bookGo');
+  await p.waitForSelector('#bookDone:not([hidden])');
+  eq(f.helpers.optIns.size, 1, 'signed up again');
+  await p.click('#langBtn');
+  assert((await p.textContent('#bookDoneMsg')).includes('Ya estás en la lista'), 'Spanish confirmation');
+  await p.click('#langBtn');
+});
+
 await step('page opens with no signal at all (service worker serves the cached shell)', async () => {
   chaos.down = false;
   const ev = f.helpers.events.get(EVENT_ID);
@@ -554,6 +589,19 @@ await step('page opens with no signal at all (service worker serves the cached s
 });
 
 const cognitoCalls = { signIn: 0, refresh: 0 };
+// OpenCV when python3 has it (the Claude Code container), otherwise jsQR with sharp (Windows).
+async function decodeQr(file) {
+  try {
+    return execFileSync('python3', ['-I', '-c', 'import cv2,sys\nimg=cv2.imread(sys.argv[1])\nval,pts,_=cv2.QRCodeDetector().detectAndDecode(img)\nprint(val)', file], { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim();
+  } catch (e) {
+    const sharp = require('sharp');
+    const jsQR = require('jsqr');
+    const { data, info } = await sharp(file).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+    const r = jsQR(new Uint8ClampedArray(data), info.width, info.height);
+    return r ? r.data : '';
+  }
+}
+
 async function cognitoMock(ctx) {
   await ctx.route('https://cognito-idp.us-west-2.amazonaws.com/', async (route) => {
     const cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': 'POST, OPTIONS' };
@@ -625,7 +673,7 @@ await step('host: sign in, list with thumbnails, hide and show, refresh token, c
 
   // the printed QR code really decodes to the guest link
   await page.locator('#cardPreview .card').screenshot({ path: path.join(SHOTS, '12-card.png') });
-  const decoded = execFileSync('python3', ['-I', '-c', 'import cv2,sys\nimg=cv2.imread(sys.argv[1])\nval,pts,_=cv2.QRCodeDetector().detectAndDecode(img)\nprint(val)', path.join(SHOTS, '12-card.png')]).toString().trim();
+  const decoded = await decodeQr(path.join(SHOTS, '12-card.png'));
   eq(decoded, `${BASE}/#e=${EVENT_ID}`, 'QR decodes to the guest link');
 
   // print sheet has six cards
@@ -634,10 +682,19 @@ await step('host: sign in, list with thumbnails, hide and show, refresh token, c
   eq(await page.locator('#sheet .card').count(), 6, 'six cards');
   assert(await page.evaluate(() => window.__printed === true), 'print called');
 
+  // book sign-ups
+  await page.click('#refresh');
+  await page.waitForFunction(() => document.querySelectorAll('#optins li').length === 1, null, { timeout: 8000 });
+  eq((await page.textContent('#optStats')).trim(), '1 guest wants the book', 'sign-up count');
+  const [csvDl] = await Promise.all([page.waitForEvent('download'), page.click('#exportCsv')]);
+  const stamp = [...f.helpers.optIns.values()][0].updatedAt;
+  eq(fs.readFileSync(await csvDl.path(), 'utf8'), '"name","email","signed_up"\r\n"Ana Lopez","ana.lopez@example.com","' + stamp + '"\r\n', 'CSV export');
+
   // JSON export
   const [dl] = await Promise.all([page.waitForEvent('download'), page.click('#exportJson')]);
   const json = JSON.parse(fs.readFileSync(await dl.path(), 'utf8'));
   eq(json.memories.length, total, 'exported rows');
+  eq(json.optIns.length, 1, 'exported sign-ups');
   assert(json.memories.every((m) => m.kind === 'note' || /^events\//.test(m.file)), 'file keys present');
 
   await page.click('#signOut');

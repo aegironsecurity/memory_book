@@ -11,6 +11,7 @@ export const LIMITS = {
   maxVideoSeconds: 62, // 60 second cap plus a little slack for recorder timing
   maxTextChars: 600,
   maxNameChars: 60,
+  maxEmailChars: 254,
   maxCaptionChars: 90,
   maxBodyBytes: 120 * 1024, // JSON body, thumbnail travels as base64 inside it
   tokenTtlMs: 48 * 3600 * 1000,
@@ -68,6 +69,8 @@ export const RE_EVENT = /^[0-9a-f]{32}$/;
 export const RE_GUEST = /^[0-9a-f]{32}$/;
 export const RE_MEMORY = /^[0-9a-z]{9}-[0-9a-f]{16}$/;
 export const RE_CODE = /^[0-9]{4}$/;
+// Deliberately loose: one @, a dot in the domain, no spaces. The host reads these by eye anyway.
+export const RE_EMAIL = /^[^\s@<>]{1,64}@[^\s@<>]+\.[^\s@<>]{2,}$/;
 
 // Strip control characters, collapse whitespace, cap length. Text is escaped again on render.
 export function cleanText(v, max, { multiline = false } = {}) {

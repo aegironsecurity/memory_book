@@ -10,7 +10,7 @@ import { createApi } from '../../frontend/js/api.js';
 import { ApiError } from '../../frontend/js/errors.js';
 import { newMemoryId, newGuestId } from '../../frontend/js/ids.js';
 import { createCognito, AuthError } from '../../frontend/js/cognito.js';
-import { guestUrl, qrSvg, extOf, exportJson } from '../../frontend/js/hostlib.js';
+import { guestUrl, qrSvg, extOf, exportJson, optInsCsv } from '../../frontend/js/hostlib.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, '../..');
@@ -214,6 +214,10 @@ test('host helpers: guest link, QR svg, export', () => {
   assert.equal(out.memories[0].file, `events/${id}/m1/original.mp4`);
   assert.equal(out.memories[1].file, undefined);
   assert.equal(JSON.stringify(out).includes('signed'), false, 'signed links are not exported');
+  const withOpt = JSON.parse(exportJson({ event: { eventId: id }, memories: [], optIns: [{ name: 'Ana', email: 'ana@example.com', updatedAt: 't' }] }));
+  assert.deepEqual(withOpt.optIns, [{ name: 'Ana', email: 'ana@example.com', updatedAt: 't' }]);
+  const csv = optInsCsv([{ name: '=HYPERLINK("x")', email: 'a"b@example.com', updatedAt: '2026-10-24' }, { name: '1966 Ana', email: 'ana@example.com', updatedAt: 'x' }]);
+  assert.equal(csv, '"name","email","signed_up"\r\n"\'=HYPERLINK(""x"")","a""b@example.com","2026-10-24"\r\n"1966 Ana","ana@example.com","x"\r\n');
 });
 
 test('production headers: strict CSP that still allows what the app needs', () => {

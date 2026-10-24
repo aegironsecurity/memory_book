@@ -37,6 +37,7 @@ const ICONS = {
   arrow: '<path d="M9 6l6 6-6 6"/>',
   back: '<path d="M15 6l-6 6 6 6"/>',
   check: '<path d="M5 12.5l4.5 4.5L19 7.5" stroke-width="2.6"/>',
+  mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3.5 6.5l8.5 6.5 8.5-6.5"/>',
 };
 function renderIcons(root) {
   $$('[data-icon]', root).forEach((el) => {
@@ -204,6 +205,7 @@ function go(name) {
     resetForms();
     $('#who').value = S.name;
   }
+  if (name === 'book') showBook(false);
   window.scrollTo(0, 0);
   const head = $(`[data-screen="${name}"] h1, [data-screen="${name}"] h2`);
   if (head) head.focus({ preventScroll: true });
@@ -221,6 +223,116 @@ function needName() {
   ls.set('mb.n', v);
   $('#nameErr').hidden = true;
   return true;
+}
+
+/* ---------- book sign-up ---------- */
+
+// The server keeps one sign-up per guest. This copy only decides which view to show.
+function bookSaved() {
+  try {
+    const b = JSON.parse(ls.get('mb.book') || 'null');
+    return b && typeof b.email === 'string' ? b : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+function renderBookMsg() {
+  const saved = bookSaved();
+  if (saved) $('#bookDoneMsg').textContent = t('book.doneMsg', { email: saved.email });
+}
+
+function showBook(editing) {
+  const saved = bookSaved();
+  const done = !!saved && !editing;
+  $('#bookForm').hidden = done;
+  $('#bookDone').hidden = !done;
+  hideErr($('#bookErr'));
+  if (!editing) hideErr($('#bookNote'));
+  if (!done) {
+    $('#bookName').value = (saved && saved.name) || S.name || '';
+    $('#bookEmail').value = (saved && saved.email) || '';
+    $('#bookOk').checked = !!saved;
+  }
+  renderBookMsg();
+}
+
+// A 401 means the code changed or the session ran out: ask for the code once, then try again.
+async function withCode(fn) {
+  try {
+    return await fn();
+  } catch (e) {
+    if (e.status !== 401) throw e;
+    await askCode();
+    return fn();
+  }
+}
+
+function bookErrorKey(e) {
+  if (e.code === 'bad_email') return 'book.errEmail';
+  if (e.code === 'name_required') return 'book.errName';
+  return codeErrorKey(e);
+}
+
+async function onBookSubmit(ev) {
+  ev.preventDefault();
+  const err = $('#bookErr');
+  const name = cleanName($('#bookName').value);
+  const email = $('#bookEmail').value.trim();
+  hideErr($('#bookNote'));
+  if (!name) return showErr(err, 'book.errName');
+  if (!/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]{2,}$/.test(email)) return showErr(err, 'book.errEmail');
+  if (!$('#bookOk').checked) return showErr(err, 'book.errConsent');
+  if (S.busy) return undefined;
+  S.busy = true;
+  hideErr(err);
+  const btn = $('#bookGo');
+  btn.disabled = true;
+  btn.textContent = t('book.saving');
+  try {
+    const r = await withCode(() => api.optIn({ name, email }));
+    ls.set('mb.book', JSON.stringify({ name: r.name, email: r.email }));
+    if (!S.name) {
+      S.name = r.name;
+      ls.set('mb.n', r.name);
+    }
+    showBook(false);
+  } catch (e) {
+    if (e.code === 'closed') go('closed');
+    else showErr(err, bookErrorKey(e));
+  } finally {
+    S.busy = false;
+    btn.disabled = false;
+    btn.textContent = t('book.save');
+  }
+  return undefined;
+}
+
+async function onBookRemove() {
+  if (S.busy) return;
+  S.busy = true;
+  const btn = $('#bookRemove');
+  btn.disabled = true;
+  try {
+    await withCode(() => api.optIn({ optIn: false }));
+    ls.set('mb.book', '');
+    showBook(true);
+    $('#bookEmail').value = '';
+    $('#bookOk').checked = false;
+    showErr($('#bookNote'), 'book.removed');
+  } catch (e) {
+    $('#bookDoneMsg').textContent = t(codeErrorKey(e));
+  } finally {
+    S.busy = false;
+    btn.disabled = false;
+  }
+}
+
+function wireBook() {
+  $('#bookForm').addEventListener('submit', onBookSubmit);
+  $('#bookEdit').addEventListener('click', () => showBook(true));
+  $('#bookRemove').addEventListener('click', onBookRemove);
+  ['#bookName', '#bookEmail', '#bookOk'].forEach((s) => $(s).addEventListener('input', () => hideErr($('#bookErr'))));
 }
 
 /* ---------- rendering ---------- */
@@ -243,6 +355,7 @@ function scheduleRender() {
 }
 
 function renderAll() {
+  renderBookMsg();
   renderHomeCount();
   renderTray();
   renderDone();
@@ -775,6 +888,7 @@ async function boot() {
   wireNote();
   wirePhoto();
   wireVideo();
+  wireBook();
   $('#trayBtn').addEventListener('click', () => {
     S.trayOpen = !S.trayOpen;
     $('#trayBtn').setAttribute('aria-expanded', String(S.trayOpen));

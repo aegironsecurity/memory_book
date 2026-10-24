@@ -1,7 +1,7 @@
 // Conservative service worker. Goal: the page still opens when the signal drops mid-party.
 // Network first (so a redeploy is picked up right away), cache as the fallback. API and S3 calls are
 // cross origin and never touched here. Visit the page with ?nosw=1 to remove this worker.
-const CACHE = 'mb-shell-v1';
+const CACHE = 'mb-shell-v2';
 const SHELL = ['./', 'index.html', 'css/app.css', 'js/guest.js', 'js/config.js', 'js/uploader.js', 'js/errors.js', 'js/api.js', 'js/idb.js', 'js/net.js', 'js/ids.js', 'js/i18n.js', 'js/policy.js', 'js/media.js', 'js/dom.js', 'fonts/bricolage.woff2', 'icon.svg'];
 
 self.addEventListener('install', (event) => {

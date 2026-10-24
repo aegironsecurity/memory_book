@@ -49141,6 +49141,7 @@ var LIMITS = {
   // 60 second cap plus a little slack for recorder timing
   maxTextChars: 600,
   maxNameChars: 60,
+  maxEmailChars: 254,
   maxCaptionChars: 90,
   maxBodyBytes: 120 * 1024,
   // JSON body, thumbnail travels as base64 inside it
@@ -49193,6 +49194,7 @@ var RE_EVENT = /^[0-9a-f]{32}$/;
 var RE_GUEST = /^[0-9a-f]{32}$/;
 var RE_MEMORY = /^[0-9a-z]{9}-[0-9a-f]{16}$/;
 var RE_CODE = /^[0-9]{4}$/;
+var RE_EMAIL = /^[^\s@<>]{1,64}@[^\s@<>]+\.[^\s@<>]{2,}$/;
 function cleanText(v, max, { multiline = false } = {}) {
   if (typeof v !== "string") return "";
   let s2 = v.normalize("NFC");
@@ -49442,6 +49444,20 @@ function createGuestHandler(deps) {
       throw e5;
     }
   }
+  async function optIn(event, now) {
+    const a5 = await auth(event, now);
+    const b5 = parseBody(event);
+    if (b5.optIn === false) {
+      await db.deleteOptIn(a5.eid, a5.gid);
+      return json(200, { optIn: false });
+    }
+    const name = cleanText(b5.name, LIMITS.maxNameChars);
+    if (!name) throw new HttpError(400, "name_required", "Add your name");
+    const email = typeof b5.email === "string" ? b5.email.trim().toLowerCase() : "";
+    if (email.length > LIMITS.maxEmailChars || !RE_EMAIL.test(email)) throw new HttpError(400, "bad_email", "Check the email address");
+    await db.putOptIn(a5.eid, a5.gid, { name, email, consent: true, updatedAt: new Date(now).toISOString() });
+    return json(200, { optIn: true, name, email });
+  }
   async function parts(event, now) {
     const a5 = await auth(event, now);
     checkOpen(a5.ev, now, { grace: true });
@@ -49545,6 +49561,7 @@ function createGuestHandler(deps) {
   const routes = {
     "POST /guest/start": start,
     "POST /guest/memories": createMemory,
+    "POST /guest/optin": optIn,
     "POST /guest/memories/{id}/parts": parts,
     "POST /guest/memories/{id}/complete": complete,
     "DELETE /guest/memories/{id}": remove
@@ -49582,6 +49599,24 @@ function realDeps(env2 = process.env) {
   const s3c = new import_client_s3.S3Client({ requestChecksumCalculation: "WHEN_REQUIRED", responseChecksumValidation: "WHEN_REQUIRED" });
   const sm = new import_client_secrets_manager.SecretsManagerClient({});
   let secretCache = null;
+  async function queryPrefix(eid, prefix) {
+    const out = [];
+    let key;
+    do {
+      const r5 = await ddb.send(
+        new import_lib_dynamodb.QueryCommand({
+          TableName: table,
+          KeyConditionExpression: "PK = :pk AND begins_with(SK, :p)",
+          ExpressionAttributeValues: { ":pk": pk(eid), ":p": prefix },
+          ExclusiveStartKey: key,
+          ConsistentRead: true
+        })
+      );
+      out.push(...r5.Items || []);
+      key = r5.LastEvaluatedKey;
+    } while (key);
+    return out;
+  }
   const db = {
     async getEvent(eid) {
       const r5 = await ddb.send(new import_lib_dynamodb.GetCommand({ TableName: table, Key: { PK: pk(eid), SK: "META" }, ConsistentRead: true }));
@@ -49613,23 +49648,17 @@ function realDeps(env2 = process.env) {
     async deleteMemory(eid, mid) {
       await ddb.send(new import_lib_dynamodb.DeleteCommand({ TableName: table, Key: { PK: pk(eid), SK: `MEM#${mid}` } }));
     },
+    async putOptIn(eid, gid, item) {
+      await ddb.send(new import_lib_dynamodb.PutCommand({ TableName: table, Item: { PK: pk(eid), SK: `OPTIN#${gid}`, ...item } }));
+    },
+    async deleteOptIn(eid, gid) {
+      await ddb.send(new import_lib_dynamodb.DeleteCommand({ TableName: table, Key: { PK: pk(eid), SK: `OPTIN#${gid}` } }));
+    },
+    async listOptIns(eid) {
+      return queryPrefix(eid, "OPTIN#");
+    },
     async listMemories(eid) {
-      const out = [];
-      let key;
-      do {
-        const r5 = await ddb.send(
-          new import_lib_dynamodb.QueryCommand({
-            TableName: table,
-            KeyConditionExpression: "PK = :pk AND begins_with(SK, :p)",
-            ExpressionAttributeValues: { ":pk": pk(eid), ":p": "MEM#" },
-            ExclusiveStartKey: key,
-            ConsistentRead: true
-          })
-        );
-        out.push(...r5.Items || []);
-        key = r5.LastEvaluatedKey;
-      } while (key);
-      return out;
+      return queryPrefix(eid, "MEM#");
     },
     // Atomically reserves one file and `bytes` of quota for a guest. Returns false when over a cap.
     async reserveQuota(eid, gid, bytes, caps) {

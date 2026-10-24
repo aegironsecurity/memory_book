@@ -192,6 +192,29 @@ test('host: needs claims, lists with links, hides and shows, changes the window'
   assert.equal(Date.parse(ext.body.event.closesAt), s.helpers.clock.t + 24 * 3600 * 1000);
 });
 
+test('book sign-up: needs a token, checks the email, one row per guest, can be withdrawn', async () => {
+  const s = setup();
+  assert.equal((await s.call('POST /guest/optin', { body: { name: 'Ana', email: 'ana@example.com' } })).status, 401);
+  const { token } = (await s.start()).body;
+  const t2 = (await s.start('1966', GID2)).body.token;
+  assert.equal((await s.call('POST /guest/optin', { token, body: { name: 'Ana', email: 'not-an-email' } })).body.error, 'bad_email');
+  assert.equal((await s.call('POST /guest/optin', { token, body: { name: '', email: 'ana@example.com' } })).body.error, 'name_required');
+  assert.equal((await s.call('POST /guest/optin', { token, body: { name: 'Ana', email: 'a@b.c<script>' } })).body.error, 'bad_email');
+  assert.equal((await s.call('POST /guest/optin', { token, body: { name: 'Ana', email: 'ana s@example.com' } })).body.error, 'bad_email');
+  assert.equal((await s.call('POST /guest/optin', { token, body: { name: 'Ana', email: 'ana@examplecom' } })).body.error, 'bad_email');
+  assert.equal((await s.call('POST /guest/optin', { token, body: { name: 'Sus', email: 'susanaso@sss.es' } })).status, 200);
+  const ok = await s.call('POST /guest/optin', { token, body: { name: ' Ana ', email: ' Ana@Example.COM ' } });
+  assert.deepEqual(ok.body, { optIn: true, name: 'Ana', email: 'ana@example.com' });
+  await s.call('POST /guest/optin', { token, body: { name: 'Ana Maria', email: 'ana@example.com' } });
+  await s.call('POST /guest/optin', { token: t2, body: { name: 'Beto', email: 'beto@example.com' } });
+  let list = (await s.hostCall('GET /host/memories')).body;
+  assert.deepEqual(list.optIns.map((o) => [o.name, o.email]), [['Ana Maria', 'ana@example.com'], ['Beto', 'beto@example.com']]);
+  assert.equal((await s.call('POST /guest/optin', { token: t2, body: { optIn: false } })).body.optIn, false);
+  list = (await s.hostCall('GET /host/memories')).body;
+  assert.equal(list.optIns.length, 1);
+  assert.equal(list.counts.total, 0, 'sign-ups are not memories');
+});
+
 test('helpers: sniffing, text cleaning, code hash', () => {
   assert.equal(sniffMatches('image/jpeg', jpegBytes(20)), true);
   assert.equal(sniffMatches('image/jpeg', mp4Bytes(20)), false);

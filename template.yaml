@@ -214,6 +214,9 @@ Resources:
         CreateMemory:
           Type: HttpApi
           Properties: {ApiId: !Ref Api, Path: /guest/memories, Method: POST}
+        OptIn:
+          Type: HttpApi
+          Properties: {ApiId: !Ref Api, Path: /guest/optin, Method: POST}
         Parts:
           Type: HttpApi
           Properties: {ApiId: !Ref Api, Path: '/guest/memories/{id}/parts', Method: POST}

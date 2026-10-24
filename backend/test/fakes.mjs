@@ -7,6 +7,7 @@ export function makeFakeDeps({ clock = { t: Date.parse('2026-10-24T20:00:00Z') }
   const events = new Map();
   const mem = new Map();
   const quota = new Map();
+  const optIns = new Map();
   const failures = new Map();
   const objects = new Map();
   const uploads = new Map();
@@ -57,6 +58,15 @@ export function makeFakeDeps({ clock = { t: Date.parse('2026-10-24T20:00:00Z') }
     },
     async deleteMemory(eid, mid) {
       mem.delete(`${eid}|${mid}`);
+    },
+    async putOptIn(eid, gid, item) {
+      optIns.set(`${eid}|${gid}`, structuredClone(item));
+    },
+    async deleteOptIn(eid, gid) {
+      optIns.delete(`${eid}|${gid}`);
+    },
+    async listOptIns(eid) {
+      return [...optIns.entries()].filter(([k]) => k.startsWith(`${eid}|`)).map(([, v]) => structuredClone(v));
     },
     async listMemories(eid) {
       return [...mem.entries()].filter(([k]) => k.startsWith(`${eid}|`)).map(([, v]) => structuredClone(v));
@@ -135,7 +145,7 @@ export function makeFakeDeps({ clock = { t: Date.parse('2026-10-24T20:00:00Z') }
 
   return {
     deps: { db, s3, now, random: () => '4321', secret: async () => Buffer.from('unit-test-secret-key'), env: { eventId: EVENT_ID } },
-    helpers: { events, mem, quota, failures, objects, uploads, putViaUrl, clock },
+    helpers: { events, mem, quota, optIns, failures, objects, uploads, putViaUrl, clock },
   };
 }
 

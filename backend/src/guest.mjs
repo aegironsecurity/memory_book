@@ -10,6 +10,7 @@ import {
   RE_GUEST,
   RE_MEMORY,
   RE_CODE,
+  RE_EMAIL,
   cleanText,
   posInt,
   codeHash,
@@ -204,6 +205,23 @@ export function createGuestHandler(deps) {
     }
   }
 
+  // ---- POST /guest/optin ----------------------------------------------------
+  // Guest asks to hear about the finished book. One row per guest, so sending again replaces it.
+  async function optIn(event, now) {
+    const a = await auth(event, now);
+    const b = parseBody(event);
+    if (b.optIn === false) {
+      await db.deleteOptIn(a.eid, a.gid);
+      return json(200, { optIn: false });
+    }
+    const name = cleanText(b.name, LIMITS.maxNameChars);
+    if (!name) throw new HttpError(400, 'name_required', 'Add your name');
+    const email = typeof b.email === 'string' ? b.email.trim().toLowerCase() : '';
+    if (email.length > LIMITS.maxEmailChars || !RE_EMAIL.test(email)) throw new HttpError(400, 'bad_email', 'Check the email address');
+    await db.putOptIn(a.eid, a.gid, { name, email, consent: true, updatedAt: new Date(now).toISOString() });
+    return json(200, { optIn: true, name, email });
+  }
+
   // ---- POST /guest/memories/{id}/parts -------------------------------------
   async function parts(event, now) {
     const a = await auth(event, now);
@@ -312,6 +330,7 @@ export function createGuestHandler(deps) {
   const routes = {
     'POST /guest/start': start,
     'POST /guest/memories': createMemory,
+    'POST /guest/optin': optIn,
     'POST /guest/memories/{id}/parts': parts,
     'POST /guest/memories/{id}/complete': complete,
     'DELETE /guest/memories/{id}': remove,

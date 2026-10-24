@@ -38,7 +38,19 @@ export function exportJson(data) {
     completedAt: m.completedAt,
     file: m.kind === 'note' ? undefined : `events/${data.event.eventId}/${m.id}/original.${extOf(m.contentType)}`,
   }));
-  return JSON.stringify({ exportedAt: new Date().toISOString(), event: data.event, memories: rows }, null, 2);
+  const optIns = (data.optIns || []).map((o) => ({ name: o.name, email: o.email, updatedAt: o.updatedAt }));
+  return JSON.stringify({ exportedAt: new Date().toISOString(), event: data.event, memories: rows, optIns }, null, 2);
+}
+
+// Spreadsheet safe CSV: quotes every cell and defuses cells a spreadsheet would run as a formula.
+export function optInsCsv(optIns) {
+  const cell = (v) => {
+    let s = String(v === undefined || v === null ? '' : v);
+    if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`;
+    return `"${s.replace(/"/g, '""')}"`;
+  };
+  const lines = [['name', 'email', 'signed_up'], ...(optIns || []).map((o) => [o.name, o.email, o.updatedAt])];
+  return `${lines.map((r) => r.map(cell).join(',')).join('\r\n')}\r\n`;
 }
 
 export function extOf(contentType) {

@@ -49141,6 +49141,7 @@ var LIMITS = {
   // 60 second cap plus a little slack for recorder timing
   maxTextChars: 600,
   maxNameChars: 60,
+  maxEmailChars: 254,
   maxCaptionChars: 90,
   maxBodyBytes: 120 * 1024,
   // JSON body, thumbnail travels as base64 inside it
@@ -49252,7 +49253,8 @@ function createHostHandler(deps) {
       pending: memories.filter((m3) => m3.status === "pending").length,
       hidden: memories.filter((m3) => m3.hidden).length
     };
-    return json(200, { event: summary(eid, ev), counts, memories });
+    const optIns = (await db.listOptIns(eid)).map((o3) => ({ name: o3.name, email: o3.email, updatedAt: o3.updatedAt })).sort((x, y) => (x.name || "").localeCompare(y.name || ""));
+    return json(200, { event: summary(eid, ev), counts, memories, optIns });
   }
   async function setHidden(event, hidden) {
     const { eid } = await loadEvent();
@@ -49331,6 +49333,24 @@ function realDeps(env2 = process.env) {
   const s3c = new import_client_s3.S3Client({ requestChecksumCalculation: "WHEN_REQUIRED", responseChecksumValidation: "WHEN_REQUIRED" });
   const sm = new import_client_secrets_manager.SecretsManagerClient({});
   let secretCache = null;
+  async function queryPrefix(eid, prefix) {
+    const out = [];
+    let key;
+    do {
+      const r5 = await ddb.send(
+        new import_lib_dynamodb.QueryCommand({
+          TableName: table,
+          KeyConditionExpression: "PK = :pk AND begins_with(SK, :p)",
+          ExpressionAttributeValues: { ":pk": pk(eid), ":p": prefix },
+          ExclusiveStartKey: key,
+          ConsistentRead: true
+        })
+      );
+      out.push(...r5.Items || []);
+      key = r5.LastEvaluatedKey;
+    } while (key);
+    return out;
+  }
   const db = {
     async getEvent(eid) {
       const r5 = await ddb.send(new import_lib_dynamodb.GetCommand({ TableName: table, Key: { PK: pk(eid), SK: "META" }, ConsistentRead: true }));
@@ -49362,23 +49382,17 @@ function realDeps(env2 = process.env) {
     async deleteMemory(eid, mid) {
       await ddb.send(new import_lib_dynamodb.DeleteCommand({ TableName: table, Key: { PK: pk(eid), SK: `MEM#${mid}` } }));
     },
+    async putOptIn(eid, gid, item) {
+      await ddb.send(new import_lib_dynamodb.PutCommand({ TableName: table, Item: { PK: pk(eid), SK: `OPTIN#${gid}`, ...item } }));
+    },
+    async deleteOptIn(eid, gid) {
+      await ddb.send(new import_lib_dynamodb.DeleteCommand({ TableName: table, Key: { PK: pk(eid), SK: `OPTIN#${gid}` } }));
+    },
+    async listOptIns(eid) {
+      return queryPrefix(eid, "OPTIN#");
+    },
     async listMemories(eid) {
-      const out = [];
-      let key;
-      do {
-        const r5 = await ddb.send(
-          new import_lib_dynamodb.QueryCommand({
-            TableName: table,
-            KeyConditionExpression: "PK = :pk AND begins_with(SK, :p)",
-            ExpressionAttributeValues: { ":pk": pk(eid), ":p": "MEM#" },
-            ExclusiveStartKey: key,
-            ConsistentRead: true
-          })
-        );
-        out.push(...r5.Items || []);
-        key = r5.LastEvaluatedKey;
-      } while (key);
-      return out;
+      return queryPrefix(eid, "MEM#");
     },
     // Atomically reserves one file and `bytes` of quota for a guest. Returns false when over a cap.
     async reserveQuota(eid, gid, bytes, caps) {
